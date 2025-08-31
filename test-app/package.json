@@ -1,7 +1,7 @@
 {
   "name": "test-express-app",
   "version": "1.0.0",
-  "description": "Test Express application for Underling",
+  "description": "Test Express application for Guv'nor",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

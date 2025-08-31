@@ -1,0 +1,7 @@
+# Guv'nor
+.env
+.env.local
+.env.*.local
+guvnor.log
+pids/
+logs/
