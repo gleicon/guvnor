@@ -1,17 +1,17 @@
 # Guv'nor
 
-> Simple, fast web application deployment and process management
+> Simple, fast web application deployment and process management.
 
-**Guv'nor** replaces nginx+systemd+docker-compose with a single binary. Zero configuration required - just works!
+**Guv'nor** replaces nginx+systemd+docker-compose with a single binary. Zero configuration required - just works! Inspired by foreman, supervisord, rc.S, (12Factor)[https://12factor.net/] ideas.
 
 ## Key Features
 
-**Zero Configuration** - Auto-detects Python, Node.js, Go, Rust apps  
-**Automatic TLS** - Let's Encrypt certificates with zero setup  
-**Lightning Fast** - Sub-second startup, optimized for speed  
-**Smart Defaults** - Works perfectly out of the box  
-**Single Binary** - No dependencies, easy deployment  
-**Hot Reload** - Automatic restarts and health monitoring  
+**Zero Configuration** - Auto-detects Python, Node.js, Go, Rust apps
+**Automatic TLS** - Let's Encrypt certificates with zero setup
+**Lightning Fast** - Sub-second startup, optimized for speed
+**Smart Defaults** - Works perfectly out of the box
+**Single Binary** - No dependencies, easy deployment
+**Hot Reload** - Automatic restarts and health monitoring
 
 ## Quick Start
 
@@ -56,7 +56,7 @@ Guv'nor automatically detects and optimally configures:
 - **FastAPI**: Detects FastAPI imports, configures `uvicorn`
 - **Streamlit**: Finds streamlit apps, configures ports
 
-### Node.js Applications  
+### Node.js Applications
 - **Express**: Auto-detects Express dependencies
 - **Next.js**: Configures dev/production modes
 - **React**: Sets up development server
@@ -94,7 +94,7 @@ guvnor init
 
 # Generated config includes:
 # - Detected app types and frameworks
-# - Optimal ports and health checks  
+# - Optimal ports and health checks
 # - Development-friendly defaults
 # - Production deployment settings
 ```
@@ -105,7 +105,7 @@ guvnor init
 ```yaml
 # Generated automatically by 'guvnor init'
 server:
-  http_port: 8080      # Non-privileged for development  
+  http_port: 8080      # Non-privileged for development
   https_port: 8443     # Non-privileged for development
   log_level: info
 
@@ -165,6 +165,16 @@ redis: redis-server --port 6379
 
 ## Why Guv'nor?
 
+Years of application development and deployment have taught us that simplicity is key. Guv'nor is designed to be a single binary that replaces the complexity of nginx+systemd+docker-compose with a simple, fast, and easy-to-use deployment and process management solution.
+
+Tools like `uv` and `pm2` as well as `supervisord` and the evolution of package management made it logical to have our own process manager. Our choice is to run software locally or on VPS or regular VMs, or even Containers on k8s but with local TLS without complex mesh networking.
+
+Current options require too much configuration and complexity. Guv'nor simplifies this process by providing a single binary that handles all the necessary configurations and dependencies.
+
+The name is inspired by the great MFDoom and Jneiro Jarel song and video (https://www.youtube.com/watch?v=WW-9TcDTKa8) !
+
+## Comparing Guv'nor with tools we are not using anymore:
+
 ### vs. Docker + docker-compose
 ```bash
 # Old way (Docker)
@@ -172,7 +182,7 @@ $ docker-compose up -d          # Slow startup
 $ docker-compose logs -f        # Complex logging
 $ vim docker-compose.yml        # Manual configuration
 
-# New way (Guv'nor)  
+# New way (Guv'nor)
 $ guvnor init                   # Auto-detect everything
 $ guvnor start                  # Instant startup
 ```
@@ -193,7 +203,7 @@ $ guvnor start --domain myapp.com --email admin@myapp.com  # Everything automati
 ```bash
 # Old way (Kubernetes)
 $ kubectl apply -f deployment.yaml    # Complex YAML
-$ kubectl apply -f service.yaml       # More YAML  
+$ kubectl apply -f service.yaml       # More YAML
 $ kubectl apply -f ingress.yaml       # Even more YAML
 $ kubectl get pods                    # Check status
 
@@ -232,7 +242,7 @@ guvnor status
 
 ### Process Management
 - **Automatic Restarts**: Failed processes restart automatically
-- **Health Checks**: HTTP/TCP/Command-based health monitoring  
+- **Health Checks**: HTTP/TCP/Command-based health monitoring
 - **Graceful Shutdown**: SIGTERM -> wait -> SIGKILL sequence
 - **Resource Limits**: Memory and CPU constraints
 - **Log Aggregation**: Centralized logging with rotation
@@ -253,7 +263,7 @@ sudo ln -sf /usr/local/bin/guvnor /usr/local/bin/gv
 go install github.com/gleicon/guvnor/cmd/guvnor@latest
 ```
 
-### Build from Source  
+### Build from Source
 ```bash
 git clone https://github.com/gleicon/guvnor.git
 cd guvnor
@@ -267,7 +277,7 @@ make build
 Guv'nor consists of:
 
 - **Discovery Engine**: Auto-detects applications and frameworks
-- **Process Manager**: Supervises application lifecycles  
+- **Process Manager**: Supervises application lifecycles
 - **Reverse Proxy**: Routes requests with TLS termination
 - **Certificate Manager**: Automatic Let's Encrypt integration
 - **Health Monitor**: Continuous application monitoring
@@ -297,14 +307,6 @@ Guv'nor has native support for 12-factor applications:
 - **Port Binding**: Automatic port assignment and routing
 - **Disposability**: Graceful startup and shutdown
 
-## Contributing
-
-We welcome contributions! Please see:
-
-- **Issues**: [GitHub Issues](https://github.com/gleicon/guvnor/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/gleicon/guvnor/discussions)
-- **Pull Requests**: Follow standard GitHub workflow
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) file
@@ -312,7 +314,7 @@ MIT License - see [LICENSE](LICENSE) file
 ## Support
 
 - **Documentation**: [EXAMPLES.md](EXAMPLES.md) for detailed examples
-- **Community**: [GitHub Discussions](https://github.com/gleicon/guvnor/discussions)  
+- **Community**: [GitHub Discussions](https://github.com/gleicon/guvnor/discussions)
 - **Issues**: [GitHub Issues](https://github.com/gleicon/guvnor/issues)
 - **Feature Requests**: [GitHub Issues](https://github.com/gleicon/guvnor/issues)
 

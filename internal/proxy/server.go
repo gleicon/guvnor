@@ -16,6 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/acme/autocert"
 
+	"github.com/gleicon/guvnor/internal/cert"
 	"github.com/gleicon/guvnor/internal/config"
 	"github.com/gleicon/guvnor/internal/health"
 	"github.com/gleicon/guvnor/internal/process"
@@ -29,7 +30,8 @@ type Server struct {
 	logger         *logrus.Entry
 	httpServer     *http.Server
 	httpsServer    *http.Server
-	certManager    *autocert.Manager
+	certManager    *autocert.Manager // Keep for backward compatibility
+	advancedCertMgr *cert.Manager   // New enhanced certificate manager
 	mu             sync.RWMutex
 	running        bool
 }
@@ -55,6 +57,11 @@ func NewServer(ctx context.Context, cfg *config.Config, logger *logrus.Logger) (
 	if cfg.TLS.Enabled && cfg.TLS.AutoCert {
 		if err := server.setupCertManager(); err != nil {
 			return nil, fmt.Errorf("failed to setup certificate manager: %w", err)
+		}
+		
+		// Also setup advanced certificate manager for enhanced features
+		if err := server.setupAdvancedCertManager(); err != nil {
+			serverLogger.WithError(err).Warn("Failed to setup advanced certificate manager, falling back to basic mode")
 		}
 	}
 	
@@ -195,14 +202,53 @@ func (s *Server) setupCertManager() error {
 	return nil
 }
 
+// setupAdvancedCertManager sets up the enhanced certificate manager
+func (s *Server) setupAdvancedCertManager() error {
+	// Collect all domains from apps
+	domains := s.config.TLS.Domains
+	for _, app := range s.config.Apps {
+		domains = append(domains, app.Domain)
+	}
+	
+	// Create certificate configuration
+	certConfig := &cert.Config{
+		Enabled:    s.config.TLS.Enabled,
+		AutoCert:   s.config.TLS.AutoCert,
+		CertDir:    s.config.TLS.CertDir,
+		Email:      s.config.TLS.Email,
+		Domains:    domains,
+		Staging:    s.config.TLS.Staging,
+		ForceHTTPS: s.config.TLS.ForceHTTPS,
+	}
+	
+	// Create enhanced certificate manager
+	advancedCertMgr, err := cert.New(certConfig, s.logger.Logger)
+	if err != nil {
+		return fmt.Errorf("failed to create advanced certificate manager: %w", err)
+	}
+	
+	s.advancedCertMgr = advancedCertMgr
+	
+	s.logger.Info("Advanced certificate manager configured successfully")
+	return nil
+}
+
 // setupServers configures HTTP and HTTPS servers
 func (s *Server) setupServers() error {
 	// Create HTTP server
 	httpMux := http.NewServeMux()
 	
 	if s.config.TLS.Enabled && s.config.TLS.AutoCert {
-		// Handle ACME challenges
-		httpMux.Handle("/.well-known/acme-challenge/", s.certManager.HTTPHandler(nil))
+		// Handle ACME challenges - use advanced cert manager if available
+		var acmeHandler http.Handler
+		
+		if s.advancedCertMgr != nil {
+			acmeHandler = s.advancedCertMgr.HTTPHandler(nil)
+		} else {
+			acmeHandler = s.certManager.HTTPHandler(nil)
+		}
+		
+		httpMux.Handle("/.well-known/acme-challenge/", acmeHandler)
 	}
 	
 	// HTTP server handler
@@ -228,9 +274,21 @@ func (s *Server) setupServers() error {
 		}
 		
 		if s.config.TLS.AutoCert {
+			// Use advanced certificate manager if available, otherwise fallback to basic
+			var getCert func(*tls.ClientHelloInfo) (*tls.Certificate, error)
+			
+			if s.advancedCertMgr != nil {
+				getCert = s.advancedCertMgr.GetCertificate
+				s.logger.Info("Using advanced certificate manager for HTTPS")
+			} else {
+				getCert = s.certManager.GetCertificate
+				s.logger.Info("Using basic certificate manager for HTTPS")
+			}
+			
 			s.httpsServer.TLSConfig = &tls.Config{
-				GetCertificate: s.certManager.GetCertificate,
+				GetCertificate: getCert,
 				NextProtos:     []string{"h2", "http/1.1"},
+				MinVersion:     tls.VersionTLS12, // Security best practice
 			}
 		}
 	}
