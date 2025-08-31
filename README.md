@@ -248,8 +248,14 @@ guvnor status
 - **Log Aggregation**: Centralized logging with rotation
 
 ## Installation
+### From github releases
 
-### Download Binary
+Check [the release page](https://github.com/gleicon/guvnor/releases) for your platform and download the binary.
+
+Create a short link:
+`sudo ln -sf /usr/local/bin/guvnor /usr/local/bin/gv`
+
+### Download binary directly with curl
 ```bash
 # macOS/Linux
 curl -sSL https://github.com/gleicon/guvnor/releases/latest/download/guvnor-$(uname -s)-$(uname -m) -o guvnor
