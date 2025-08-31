@@ -2,7 +2,7 @@
 
 > Simple, fast web application deployment and process management.
 
-**Guv'nor** replaces nginx+systemd+docker-compose with a single binary. Zero configuration required - just works! Inspired by foreman, supervisord, rc.S, [12Factor](https://12factor.net/) ideas.
+**Guv'nor** replaces a bunch moving parts required to run your application in dev or production environment with a single binary. Zero configuration required - just works!
 
 ## Key Features
 
@@ -163,17 +163,8 @@ beat: celery -A app beat --loglevel=info
 redis: redis-server --port 6379
 ```
 
-## Why Guv'nor?
 
-Years of application development and deployment have taught us that simplicity is key. Guv'nor is designed to be a single binary that replaces the complexity of nginx+systemd+docker-compose with a simple, fast, and easy-to-use deployment and process management solution.
-
-Tools like `uv` and `pm2` as well as `supervisord` and the evolution of package management made it logical to have our own process manager. Our choice is to run software locally or on VPS or regular VMs, or even Containers on k8s but with local TLS without complex mesh networking.
-
-Current options require too much configuration and complexity. Guv'nor simplifies this process by providing a single binary that handles all the necessary configurations and dependencies.
-
-The name is inspired by the great MFDoom and Jneiro Jarel song and video (https://www.youtube.com/watch?v=WW-9TcDTKa8) !
-
-## Comparing Guv'nor with tools we are not using anymore:
+## Compare Guv'nor with similar tools:
 
 ### vs. Docker + docker-compose
 ```bash
@@ -323,6 +314,20 @@ MIT License - see [LICENSE](LICENSE) file
 - **Community**: [GitHub Discussions](https://github.com/gleicon/guvnor/discussions)
 - **Issues**: [GitHub Issues](https://github.com/gleicon/guvnor/issues)
 - **Feature Requests**: [GitHub Issues](https://github.com/gleicon/guvnor/issues)
+
+## Motivation: Why Guv'nor?
+
+Years of application development and deployment have taught us that simplicity is key. Guv'nor is designed to be a single binary that replaces the complexity of nginx+systemd+docker-compose with a simple, fast, and easy-to-use deployment and process management solution.
+
+My stack revolved around parts of [foreman](https://github.com/ddollar/foreman), [supervisord](https://supervisord.org/), [rc.S](https://en.wikipedia.org/wiki/Init) style scripts, [12Factor](https://12factor.net/), my ancient [nginx](https://nginx.org/) reverse proxy config and [let's encrypt](https://letsencrypt.org/) facilities.
+
+Tools like `uv` and `pm2` as well as `supervisord` and the evolution of package management inspired me and made it logical to glue a simple process manager that could support a reverse proxy like the times of inetd.
+
+I run software locally, on cheap VPS, VMs, or Containers on k8s. I want to run my apps, have TLS, and be able to manage them easily.
+
+Guv'nor simplifies this process by providing a single binary that handles all the necessary configurations and dependencies.
+
+The name is inspired by the great MFDoom and Jneiro Jarel song and video (https://www.youtube.com/watch?v=WW-9TcDTKa8) !
 
 ---
 
