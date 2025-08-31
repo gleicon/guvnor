@@ -2,7 +2,7 @@
 
 > Simple, fast web application deployment and process management.
 
-**Guv'nor** replaces nginx+systemd+docker-compose with a single binary. Zero configuration required - just works! Inspired by foreman, supervisord, rc.S, (12Factor)[https://12factor.net/] ideas.
+**Guv'nor** replaces nginx+systemd+docker-compose with a single binary. Zero configuration required - just works! Inspired by foreman, supervisord, rc.S, [12Factor](https://12factor.net/) ideas.
 
 ## Key Features
 
