@@ -1,0 +1,78 @@
+# Guv'nor .gitignore
+
+# Binaries
+guvnor
+gv
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# Configuration files (may contain secrets)
+guvnor.yaml
+guvnor.yml
+underling.yaml
+underling.yml
+*.config.yaml
+*.config.yml
+
+# Logs
+*.log
+guvnor.log
+underling.log
+logs/
+
+# Process management
+pids/
+*.pid
+
+# Certificates and keys
+certs/
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Build artifacts
+dist/
+build/
+coverage/
+reports/
+
+# Dependencies
+vendor/
+node_modules/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
