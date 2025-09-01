@@ -39,7 +39,7 @@ underling.yml
 *.log
 guvnor.log
 underling.log
-logs/
+
 
 # Process management
 pids/
