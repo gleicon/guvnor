@@ -31,7 +31,8 @@ type ServerConfig struct {
 // AppConfig defines configuration for an individual application
 type AppConfig struct {
 	Name          string            `yaml:"name"`
-	Domain        string            `yaml:"domain"`
+	Hostname      string            `yaml:"hostname,omitempty"` // NEW: for virtual host routing
+	Domain        string            `yaml:"domain,omitempty"`   // DEPRECATED: use hostname instead
 	Port          int               `yaml:"port"`
 	Command       string            `yaml:"command"`
 	Args          []string          `yaml:"args,omitempty"`
@@ -39,6 +40,17 @@ type AppConfig struct {
 	Environment   map[string]string `yaml:"environment,omitempty"`
 	HealthCheck   HealthCheckConfig `yaml:"health_check"`
 	RestartPolicy RestartPolicy     `yaml:"restart_policy"`
+	TLS           AppTLSConfig      `yaml:"tls,omitempty"` // NEW: per-app TLS config
+}
+
+// AppTLSConfig contains per-app TLS configuration
+type AppTLSConfig struct {
+	Enabled   bool   `yaml:"enabled" default:"false"`
+	AutoCert  bool   `yaml:"auto_cert" default:"true"`
+	Email     string `yaml:"email,omitempty"`
+	Staging   bool   `yaml:"staging" default:"false"`
+	CertFile  string `yaml:"cert_file,omitempty"`  // For manual certs
+	KeyFile   string `yaml:"key_file,omitempty"`   // For manual certs
 }
 
 // HealthCheckConfig defines health check parameters for an app
@@ -57,13 +69,13 @@ type RestartPolicy struct {
 	Backoff    time.Duration `yaml:"backoff" default:"5s"`
 }
 
-// TLSConfig contains TLS and Let's Encrypt configuration
+// TLSConfig contains global TLS and Let's Encrypt configuration
 type TLSConfig struct {
 	Enabled    bool     `yaml:"enabled" default:"true"`
 	AutoCert   bool     `yaml:"auto_cert" default:"true"`
 	CertDir    string   `yaml:"cert_dir" default:"/var/lib/guvnor/certs"`
-	Email      string   `yaml:"email"`
-	Domains    []string `yaml:"domains,omitempty"`
+	Email      string   `yaml:"email,omitempty"`      // Fallback email for apps without one
+	Domains    []string `yaml:"domains,omitempty"`    // DEPRECATED: domains now per-app
 	Staging    bool     `yaml:"staging" default:"false"`
 	ForceHTTPS bool     `yaml:"force_https" default:"true"`
 }
@@ -122,7 +134,7 @@ func (c *Config) Validate() error {
 	}
 
 	// Validate apps
-	domainMap := make(map[string]string)
+	hostnameMap := make(map[string]string)
 	portMap := make(map[int]string)
 
 	for i, app := range c.Apps {
@@ -130,31 +142,49 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("app name cannot be empty")
 		}
 
-		if app.Domain == "" {
-			// Auto-generate domain for local development
-			c.Apps[i].Domain = fmt.Sprintf("%s.localhost", strings.ToLower(app.Name))
-			app.Domain = c.Apps[i].Domain // Update local var for validation
+		// Handle hostname vs domain (backward compatibility)
+		hostname := app.Hostname
+		if hostname == "" && app.Domain != "" {
+			// Use domain if hostname not specified (backward compatibility)
+			hostname = app.Domain
+			c.Apps[i].Hostname = hostname
+		} else if hostname == "" {
+			// Auto-generate hostname: app-name.localhost
+			hostname = fmt.Sprintf("%s.localhost", strings.ToLower(app.Name))
+			c.Apps[i].Hostname = hostname
 		}
 
-		if app.Port <= 0 || app.Port > 65535 {
+		// Auto-assign port if not specified
+		if app.Port <= 0 {
+			c.Apps[i].Port = c.findAvailablePort(portMap, 3000+i*1000)
+		} else if app.Port > 65535 {
 			return fmt.Errorf("app %s: invalid port %d", app.Name, app.Port)
 		}
+		
+		// Update local var for validation
+		app.Port = c.Apps[i].Port
+		hostname = c.Apps[i].Hostname
 
 		if app.Command == "" {
 			return fmt.Errorf("app %s: command cannot be empty", app.Name)
 		}
 
-		// Check for duplicate domains
-		if existingApp, exists := domainMap[app.Domain]; exists {
-			return fmt.Errorf("domain %s is used by both %s and %s", app.Domain, existingApp, app.Name)
+		// Check for duplicate hostnames
+		if existingApp, exists := hostnameMap[hostname]; exists {
+			return fmt.Errorf("hostname %s is used by both %s and %s", hostname, existingApp, app.Name)
 		}
-		domainMap[app.Domain] = app.Name
+		hostnameMap[hostname] = app.Name
 
 		// Check for duplicate ports
 		if existingApp, exists := portMap[app.Port]; exists {
 			return fmt.Errorf("port %d is used by both %s and %s", app.Port, existingApp, app.Name)
 		}
 		portMap[app.Port] = app.Name
+
+		// Validate per-app TLS configuration
+		if app.TLS.Enabled && app.TLS.AutoCert && app.TLS.Email == "" && c.TLS.Email == "" {
+			return fmt.Errorf("app %s: email required for TLS auto-cert (set in app.tls.email or global tls.email)", app.Name)
+		}
 
 		// Set defaults for health check
 		if app.HealthCheck.Path == "" {
@@ -182,6 +212,27 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+// findAvailablePort finds the next available port starting from startPort
+func (c *Config) findAvailablePort(portMap map[int]string, startPort int) int {
+	port := startPort
+	for {
+		if _, exists := portMap[port]; !exists && port <= 65535 {
+			return port
+		}
+		port++
+		if port > 65535 {
+			// Wrap around to find any available port starting from 3000
+			for p := 3000; p < startPort; p++ {
+				if _, exists := portMap[p]; !exists {
+					return p
+				}
+			}
+			// If we still can't find one, return original (will cause validation error)
+			return startPort
+		}
+	}
+}
+
 // CreateSample creates a sample configuration file
 func CreateSample(filename string) error {
 	sample := &Config{
@@ -196,7 +247,7 @@ func CreateSample(filename string) error {
 		Apps: []AppConfig{
 			{
 				Name:       "web-app",
-				Domain:     "myapp.example.com",
+				Hostname:   "myapp.example.com",
 				Port:       3000,
 				Command:    "node",
 				Args:       []string{"server.js"},
@@ -217,10 +268,16 @@ func CreateSample(filename string) error {
 					MaxRetries: 3,
 					Backoff:    5 * time.Second,
 				},
+				TLS: AppTLSConfig{
+					Enabled:  true,
+					AutoCert: true,
+					Email:    "admin@example.com",
+					Staging:  false,
+				},
 			},
 			{
 				Name:       "api-service",
-				Domain:     "api.example.com",
+				Hostname:   "api.example.com",
 				Port:       8000,
 				Command:    "python",
 				Args:       []string{"-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"},
@@ -239,6 +296,12 @@ func CreateSample(filename string) error {
 					Enabled:    true,
 					MaxRetries: 3,
 					Backoff:    5 * time.Second,
+				},
+				TLS: AppTLSConfig{
+					Enabled:  true,
+					AutoCert: true,
+					Email:    "api-admin@example.com",
+					Staging:  false,
 				},
 			},
 		},
@@ -286,10 +349,11 @@ func CreateSmart(apps []*discovery.App) *Config {
 	}
 
 	// Convert discovery apps to config apps
+	isOnlyApp := len(apps) == 1
 	for _, app := range apps {
 		configApp := AppConfig{
 			Name:        app.Name,
-			Domain:      generateSmartDomain(app),
+			Hostname:    generateSmartDomainForSingleApp(app, isOnlyApp),
 			Port:        app.Port,
 			Command:     app.Command,
 			Args:        convertArgs(app.Args, app.Port),
@@ -319,25 +383,116 @@ func CreateSmart(apps []*discovery.App) *Config {
 func CreateSmartConfig(filename string, apps []*discovery.App) error {
 	config := CreateSmart(apps)
 
-	// Add header comment to generated config
-	header := `# Guv'nor Configuration - Generated Automatically
-# Edit this file to customize your application deployment
-# Run 'guvnor start' to start all applications
-
-`
-
-	data, err := yaml.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("failed to marshal smart config: %w", err)
-	}
-
-	// Write with header comment
-	fullContent := header + string(data)
-	if err := os.WriteFile(filename, []byte(fullContent), 0644); err != nil {
+	// Create custom YAML with helpful comments
+	yamlContent := generateCommentedYAML(config, apps)
+	
+	if err := os.WriteFile(filename, []byte(yamlContent), 0644); err != nil {
 		return fmt.Errorf("failed to write smart config: %w", err)
 	}
 
 	return nil
+}
+
+// generateCommentedYAML creates YAML with helpful comments for users
+func generateCommentedYAML(config *Config, apps []*discovery.App) string {
+	var buf strings.Builder
+	
+	// Header comment
+	buf.WriteString("# Guv'nor Configuration - Generated Automatically\n")
+	buf.WriteString("# Edit this file to customize your application deployment\n") 
+	buf.WriteString("# Run 'guvnor start' to start all applications\n\n")
+	
+	// Server section
+	buf.WriteString("server:\n")
+	buf.WriteString(fmt.Sprintf("  http_port: %d     # Non-privileged port for development\n", config.Server.HTTPPort))
+	buf.WriteString(fmt.Sprintf("  https_port: %d    # HTTPS port (if TLS enabled)\n", config.Server.HTTPSPort))
+	buf.WriteString(fmt.Sprintf("  log_level: %s       # info, warn, error, debug\n\n", config.Server.LogLevel))
+	
+	// Apps section
+	buf.WriteString("apps:\n")
+	isOnlyApp := len(apps) == 1
+	
+	for i, app := range config.Apps {
+		buf.WriteString(fmt.Sprintf("  - name: %s\n", app.Name))
+		
+		// Hostname comment based on whether it's single or multi-app
+		if isOnlyApp {
+			buf.WriteString(fmt.Sprintf("    hostname: %s    # Access via http://localhost:8080/\n", app.Hostname))
+			buf.WriteString("                       # Change to 'my-app.localhost' for subdomain routing\n")
+		} else {
+			buf.WriteString(fmt.Sprintf("    hostname: %s  # Access via http://%s:8080/\n", app.Hostname, app.Hostname))
+		}
+		
+		buf.WriteString(fmt.Sprintf("    port: %d             # Backend port (your app listens here)\n", app.Port))
+		buf.WriteString(fmt.Sprintf("    command: %s\n", app.Command))
+		
+		if len(app.Args) > 0 {
+			buf.WriteString("    args:\n")
+			for _, arg := range app.Args {
+				buf.WriteString(fmt.Sprintf("      - \"%s\"\n", arg))
+			}
+		}
+		
+		if app.WorkingDir != "" {
+			buf.WriteString(fmt.Sprintf("    working_dir: %s\n", app.WorkingDir))
+		}
+		
+		if len(app.Environment) > 0 {
+			buf.WriteString("    environment:\n")
+			for k, v := range app.Environment {
+				buf.WriteString(fmt.Sprintf("      %s: \"%s\"\n", k, v))
+			}
+		}
+		
+		// Health check
+		buf.WriteString("    health_check:\n")
+		buf.WriteString(fmt.Sprintf("      enabled: %t\n", app.HealthCheck.Enabled))
+		buf.WriteString(fmt.Sprintf("      path: %s          # Health check endpoint\n", app.HealthCheck.Path))
+		buf.WriteString(fmt.Sprintf("      interval: %s       # How often to check\n", app.HealthCheck.Interval))
+		
+		// Restart policy
+		buf.WriteString("    restart_policy:\n")
+		buf.WriteString(fmt.Sprintf("      enabled: %t\n", app.RestartPolicy.Enabled))
+		buf.WriteString(fmt.Sprintf("      max_retries: %d      # Retries before giving up\n", app.RestartPolicy.MaxRetries))
+		buf.WriteString(fmt.Sprintf("      backoff: %s        # Wait time between retries\n", app.RestartPolicy.Backoff))
+		
+		if i < len(config.Apps)-1 {
+			buf.WriteString("\n")
+		}
+	}
+	
+	// TLS section
+	buf.WriteString("\n# TLS/HTTPS Configuration\n")
+	buf.WriteString("tls:\n")
+	buf.WriteString(fmt.Sprintf("  enabled: %t           # Set to true for production HTTPS\n", config.TLS.Enabled))
+	buf.WriteString(fmt.Sprintf("  auto_cert: %t         # Automatic Let's Encrypt certificates\n", config.TLS.AutoCert))
+	buf.WriteString(fmt.Sprintf("  cert_dir: %s        # Where to store certificates\n", config.TLS.CertDir))
+	buf.WriteString(fmt.Sprintf("  staging: %t           # Use Let's Encrypt staging (for testing)\n", config.TLS.Staging))
+	buf.WriteString(fmt.Sprintf("  force_https: %t       # Redirect HTTP to HTTPS\n", config.TLS.ForceHTTPS))
+	if config.TLS.Email != "" {
+		buf.WriteString(fmt.Sprintf("  email: %s       # Contact for Let's Encrypt\n", config.TLS.Email))
+	} else {
+		buf.WriteString("  # email: your@email.com   # Required for Let's Encrypt (uncomment & set)\n")
+	}
+	
+	// Footer comment
+	buf.WriteString("\n# Usage:\n")
+	if isOnlyApp {
+		buf.WriteString("# - Start: guvnor start\n")
+		buf.WriteString("# - View logs: guvnor logs\n")
+		buf.WriteString("# - Check status: guvnor status\n")
+		buf.WriteString(fmt.Sprintf("# - Access your app: http://localhost:8080/\n"))
+	} else {
+		buf.WriteString("# - Start all apps: guvnor start\n")
+		buf.WriteString("# - Start specific app: guvnor start app-name\n")
+		buf.WriteString("# - View logs: guvnor logs [app-name]\n")
+		buf.WriteString("# - Check status: guvnor status [app-name]\n")
+		for _, app := range config.Apps {
+			buf.WriteString(fmt.Sprintf("# - Access %s: http://%s:8080/\n", app.Name, app.Hostname))
+		}
+	}
+	
+	return buf.String()
 }
 
 // Smart helper functions
@@ -348,6 +503,21 @@ func generateSmartDomain(app *discovery.App) string {
 	}
 
 	// For development, use localhost with app name
+	return fmt.Sprintf("%s.localhost", strings.ToLower(app.Name))
+}
+
+// generateSmartDomainForSingleApp provides better defaults for single app setups
+func generateSmartDomainForSingleApp(app *discovery.App, isOnlyApp bool) string {
+	if app.Domain != "" {
+		return app.Domain
+	}
+
+	// If this is the only app, use plain localhost for easy access
+	if isOnlyApp {
+		return "localhost"
+	}
+
+	// Multiple apps: use app-specific subdomain
 	return fmt.Sprintf("%s.localhost", strings.ToLower(app.Name))
 }
 
@@ -400,16 +570,24 @@ func CreateProductionConfig(filename string, apps []*discovery.App, domain strin
 	config.TLS.Staging = false
 	config.TLS.ForceHTTPS = true
 
-	// Update domains for production
+	// Update hostnames for production
 	for i, app := range config.Apps {
 		if domain != "" {
 			if len(config.Apps) == 1 {
 				// Single app gets the main domain
-				config.Apps[i].Domain = domain
+				config.Apps[i].Hostname = domain
 			} else {
 				// Multiple apps get subdomains
-				config.Apps[i].Domain = fmt.Sprintf("%s.%s", app.Name, domain)
+				config.Apps[i].Hostname = fmt.Sprintf("%s.%s", app.Name, domain)
 			}
+		}
+
+		// Enable TLS for production apps
+		config.Apps[i].TLS = AppTLSConfig{
+			Enabled:  true,
+			AutoCert: true,
+			Email:    email,
+			Staging:  false,
 		}
 
 		// Production-specific health check adjustments
@@ -418,10 +596,12 @@ func CreateProductionConfig(filename string, apps []*discovery.App, domain strin
 		config.Apps[i].RestartPolicy.Backoff = 10 * time.Second // Longer backoff
 	}
 
-	// Add all domains to TLS config
+	// Add all hostnames to TLS config (for backward compatibility)
 	var domains []string
 	for _, app := range config.Apps {
-		domains = append(domains, app.Domain)
+		if app.Hostname != "" {
+			domains = append(domains, app.Hostname)
+		}
 	}
 	config.TLS.Domains = domains
 

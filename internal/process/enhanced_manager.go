@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -41,6 +42,11 @@ func NewEnhancedManager(logger *logrus.Logger, logCapacity int) *EnhancedManager
 // GetLogManager returns the log manager
 func (em *EnhancedManager) GetLogManager() *logs.LogManager {
 	return em.logManager
+}
+
+// SetLogManager sets the log manager (useful for sharing between instances)
+func (em *EnhancedManager) SetLogManager(lm *logs.LogManager) {
+	em.logManager = lm
 }
 
 // StopAllWithResults stops all managed processes and returns detailed results
@@ -157,7 +163,7 @@ func (em *EnhancedManager) stopProcessWithResult(ctx context.Context, proc *Proc
 
 // StartWithLogging starts a process with enhanced logging
 func (em *EnhancedManager) StartWithLogging(ctx context.Context, appConfig config.AppConfig) error {
-	em.logManager.Log(appConfig.Name, "info", fmt.Sprintf("Starting process: %s", appConfig.Command))
+	em.logManager.Log(appConfig.Name, "info", fmt.Sprintf("Starting process: %s %s", appConfig.Command, strings.Join(appConfig.Args, " ")))
 	
 	// Create enhanced process that logs to our buffer
 	err := em.Start(ctx, appConfig)
@@ -169,7 +175,12 @@ func (em *EnhancedManager) StartWithLogging(ctx context.Context, appConfig confi
 	// Get the started process and attach log capture
 	proc, exists := em.GetProcess(appConfig.Name)
 	if exists && proc.IsRunning() {
-		em.logManager.Log(appConfig.Name, "info", fmt.Sprintf("Process started successfully (PID: %d)", proc.GetPID()))
+		em.logManager.Log(appConfig.Name, "info", fmt.Sprintf("Process started successfully (PID: %d, Port: %d)", proc.GetPID(), appConfig.Port))
+		
+		// Log more details about the process
+		if appConfig.WorkingDir != "" {
+			em.logManager.Log(appConfig.Name, "debug", fmt.Sprintf("Working directory: %s", appConfig.WorkingDir))
+		}
 		
 		// Start capturing process output
 		go em.captureProcessOutput(proc)

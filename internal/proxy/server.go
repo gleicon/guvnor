@@ -16,6 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/acme/autocert"
 
+	"github.com/gleicon/guvnor/internal/api"
 	"github.com/gleicon/guvnor/internal/cert"
 	"github.com/gleicon/guvnor/internal/config"
 	"github.com/gleicon/guvnor/internal/health"
@@ -25,11 +26,12 @@ import (
 // Server represents the main proxy server
 type Server struct {
 	config         *config.Config
-	processManager *process.Manager
+	processManager *process.EnhancedManager
 	healthChecker  *health.Checker
 	logger         *logrus.Entry
 	httpServer     *http.Server
 	httpsServer    *http.Server
+	apiServer      *api.Server     // Management API server
 	certManager    *autocert.Manager // Keep for backward compatibility
 	advancedCertMgr *cert.Manager   // New enhanced certificate manager
 	mu             sync.RWMutex
@@ -40,28 +42,36 @@ type Server struct {
 func NewServer(ctx context.Context, cfg *config.Config, logger *logrus.Logger) (*Server, error) {
 	serverLogger := logger.WithField("component", "proxy-server")
 	
-	// Create process manager
-	processManager := process.NewManager(logger)
+	// Create enhanced process manager with logging
+	processManager := process.NewEnhancedManager(logger, 1000)
 	
-	// Create health checker
-	healthChecker := health.NewChecker(processManager, logger)
+	// Create health checker (need to adapt since it expects the basic manager interface)
+	healthChecker := health.NewChecker(processManager.Manager, logger)
 	
+	// Create management API server
+	mgmtPort := api.GetManagementPort(cfg.Server.HTTPPort)
+	apiServer := api.NewServer(logger, processManager, processManager.GetLogManager(), mgmtPort)
+
 	server := &Server{
 		config:         cfg,
 		processManager: processManager,
 		healthChecker:  healthChecker,
 		logger:         serverLogger,
+		apiServer:      apiServer,
 	}
 	
 	// Setup TLS certificate manager if enabled
 	if cfg.TLS.Enabled && cfg.TLS.AutoCert {
+		processManager.GetLogManager().Log("proxy-server", "info", "Setting up TLS certificate manager")
 		if err := server.setupCertManager(); err != nil {
+			processManager.GetLogManager().Log("proxy-server", "error", fmt.Sprintf("Failed to setup certificate manager: %v", err))
 			return nil, fmt.Errorf("failed to setup certificate manager: %w", err)
 		}
 		
 		// Also setup advanced certificate manager for enhanced features
 		if err := server.setupAdvancedCertManager(); err != nil {
 			serverLogger.WithError(err).Warn("Failed to setup advanced certificate manager, falling back to basic mode")
+			processManager.GetLogManager().Log("proxy-server", "warn", fmt.Sprintf("Failed to setup advanced certificate manager, falling back to basic mode: %v", err))
 		}
 	}
 	
@@ -83,25 +93,42 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	
 	s.logger.Info("Starting proxy server")
+	s.processManager.GetLogManager().Log("proxy-server", "info", "Starting proxy server")
 	
-	// Start all configured applications
+	// Start all configured applications using enhanced manager
 	for _, appConfig := range s.config.Apps {
 		s.logger.WithField("app", appConfig.Name).Info("Starting application")
+		s.processManager.GetLogManager().Log("proxy-server", "info", fmt.Sprintf("Starting application: %s", appConfig.Name))
 		
-		if err := s.processManager.Start(ctx, appConfig); err != nil {
+		if err := s.processManager.StartWithLogging(ctx, appConfig); err != nil {
 			s.logger.WithError(err).WithField("app", appConfig.Name).Error("Failed to start application")
+			s.processManager.GetLogManager().Log("proxy-server", "error", fmt.Sprintf("Failed to start application %s: %v", appConfig.Name, err))
 			continue
 		}
+		
+		s.processManager.GetLogManager().Log("proxy-server", "info", fmt.Sprintf("Application %s started successfully", appConfig.Name))
 	}
 	
 	// Start health checker
 	s.healthChecker.Start(ctx)
 	
+	// Start management API server
+	mgmtPort := api.GetManagementPort(s.config.Server.HTTPPort)
+	s.processManager.GetLogManager().Log("proxy-server", "info", fmt.Sprintf("Starting management API server on port %d", mgmtPort))
+	if err := s.apiServer.Start(); err != nil {
+		s.logger.WithError(err).Error("Failed to start management API server")
+		s.processManager.GetLogManager().Log("proxy-server", "error", fmt.Sprintf("Failed to start management API server: %v", err))
+	} else {
+		s.processManager.GetLogManager().Log("proxy-server", "info", fmt.Sprintf("Management API server started successfully on port %d", mgmtPort))
+	}
+	
 	// Start HTTP server (for redirects and ACME challenges)
 	go func() {
 		s.logger.WithField("port", s.config.Server.HTTPPort).Info("Starting HTTP server")
+		s.processManager.GetLogManager().Log("proxy-server", "info", fmt.Sprintf("Starting HTTP server on port %d", s.config.Server.HTTPPort))
 		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			s.logger.WithError(err).Error("HTTP server error")
+			s.processManager.GetLogManager().Log("proxy-server", "error", fmt.Sprintf("HTTP server error: %v", err))
 		}
 	}()
 	
@@ -109,14 +136,17 @@ func (s *Server) Start(ctx context.Context) error {
 	if s.config.TLS.Enabled {
 		go func() {
 			s.logger.WithField("port", s.config.Server.HTTPSPort).Info("Starting HTTPS server")
+			s.processManager.GetLogManager().Log("proxy-server", "info", fmt.Sprintf("Starting HTTPS server on port %d", s.config.Server.HTTPSPort))
 			if err := s.httpsServer.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
 				s.logger.WithError(err).Error("HTTPS server error")
+				s.processManager.GetLogManager().Log("proxy-server", "error", fmt.Sprintf("HTTPS server error: %v", err))
 			}
 		}()
 	}
 	
 	s.running = true
 	s.logger.Info("Proxy server started successfully")
+	s.processManager.GetLogManager().Log("proxy-server", "info", "Proxy server started successfully")
 	
 	return nil
 }
@@ -134,6 +164,15 @@ func (s *Server) Stop(ctx context.Context) error {
 	
 	// Stop health checker
 	s.healthChecker.Stop()
+	
+	// Stop management API server
+	if s.apiServer != nil {
+		shutdownCtx, cancel := context.WithTimeout(ctx, s.config.Server.ShutdownTimeout)
+		if err := s.apiServer.Stop(shutdownCtx); err != nil {
+			s.logger.WithError(err).Error("Error shutting down management API server")
+		}
+		cancel()
+	}
 	
 	// Stop HTTP servers
 	if s.httpServer != nil {
@@ -172,10 +211,19 @@ func (s *Server) setupCertManager() error {
 		return fmt.Errorf("failed to create cert directory: %w", err)
 	}
 	
-	// Collect all domains from apps
+	// Collect domains from apps with TLS enabled
 	domains := s.config.TLS.Domains
 	for _, app := range s.config.Apps {
-		domains = append(domains, app.Domain)
+		// Only add domains for apps that have TLS enabled
+		if app.TLS.Enabled {
+			hostname := app.Hostname
+			if hostname == "" {
+				hostname = app.Domain // Backward compatibility
+			}
+			if hostname != "" {
+				domains = append(domains, hostname)
+			}
+		}
 	}
 	
 	// Create autocert manager
@@ -199,15 +247,26 @@ func (s *Server) setupCertManager() error {
 		"staging":  s.config.TLS.Staging,
 	}).Info("Certificate manager configured")
 	
+	s.processManager.GetLogManager().Log("proxy-server", "info", fmt.Sprintf("Certificate manager configured for domains: %v (cert_dir: %s, staging: %v)", domains, s.config.TLS.CertDir, s.config.TLS.Staging))
+	
 	return nil
 }
 
 // setupAdvancedCertManager sets up the enhanced certificate manager
 func (s *Server) setupAdvancedCertManager() error {
-	// Collect all domains from apps
+	// Collect domains from apps with TLS enabled
 	domains := s.config.TLS.Domains
 	for _, app := range s.config.Apps {
-		domains = append(domains, app.Domain)
+		// Only add domains for apps that have TLS enabled
+		if app.TLS.Enabled {
+			hostname := app.Hostname
+			if hostname == "" {
+				hostname = app.Domain // Backward compatibility
+			}
+			if hostname != "" {
+				domains = append(domains, hostname)
+			}
+		}
 	}
 	
 	// Create certificate configuration
@@ -230,6 +289,7 @@ func (s *Server) setupAdvancedCertManager() error {
 	s.advancedCertMgr = advancedCertMgr
 	
 	s.logger.Info("Advanced certificate manager configured successfully")
+	s.processManager.GetLogManager().Log("proxy-server", "info", "Advanced certificate manager configured successfully")
 	return nil
 }
 
@@ -280,9 +340,11 @@ func (s *Server) setupServers() error {
 			if s.advancedCertMgr != nil {
 				getCert = s.advancedCertMgr.GetCertificate
 				s.logger.Info("Using advanced certificate manager for HTTPS")
+				s.processManager.GetLogManager().Log("proxy-server", "info", "Using advanced certificate manager for HTTPS")
 			} else {
 				getCert = s.certManager.GetCertificate
 				s.logger.Info("Using basic certificate manager for HTTPS")
+				s.processManager.GetLogManager().Log("proxy-server", "info", "Using basic certificate manager for HTTPS")
 			}
 			
 			s.httpsServer.TLSConfig = &tls.Config{
@@ -352,10 +414,22 @@ func (s *Server) proxyRequest(w http.ResponseWriter, r *http.Request) {
 	// Wrap response writer to capture status code and size
 	rw := &responseWriter{ResponseWriter: w, statusCode: 0, size: 0}
 	
-	// Find the app for this domain
+	// Find the app for this hostname
+	hostname := r.Host
+	// Strip port from hostname if present (e.g., example.com:443 -> example.com)
+	if colonPos := strings.Index(hostname, ":"); colonPos != -1 {
+		hostname = hostname[:colonPos]
+	}
+	
 	var targetApp *config.AppConfig
 	for _, app := range s.config.Apps {
-		if app.Domain == r.Host {
+		// Check both hostname and domain (backward compatibility)
+		appHostname := app.Hostname
+		if appHostname == "" {
+			appHostname = app.Domain // Fall back to domain if hostname not set
+		}
+		
+		if appHostname == hostname {
 			targetApp = &app
 			break
 		}
@@ -364,6 +438,7 @@ func (s *Server) proxyRequest(w http.ResponseWriter, r *http.Request) {
 	if targetApp == nil {
 		s.logApacheFormat(r, rw, 404, time.Since(startTime), "-")
 		s.logger.Warn("No application found for domain", "host", r.Host)
+		s.processManager.GetLogManager().Log("proxy-server", "warn", fmt.Sprintf("No application found for domain: %s", r.Host))
 		http.Error(rw, "Domain not found", http.StatusNotFound)
 		return
 	}
@@ -373,6 +448,7 @@ func (s *Server) proxyRequest(w http.ResponseWriter, r *http.Request) {
 	if !exists || !proc.IsRunning() {
 		s.logApacheFormat(r, rw, 503, time.Since(startTime), targetApp.Name)
 		s.logger.Error("Target application is not running", "app", targetApp.Name)
+		s.processManager.GetLogManager().Log("proxy-server", "error", fmt.Sprintf("Target application %s is not running", targetApp.Name))
 		http.Error(rw, "Service Unavailable", http.StatusServiceUnavailable)
 		return
 	}
@@ -402,6 +478,7 @@ func (s *Server) proxyRequest(w http.ResponseWriter, r *http.Request) {
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		s.logApacheFormat(r, rw, 502, time.Since(startTime), targetApp.Name)
 		s.logger.Error("Proxy error", "app", targetApp.Name, "error", err)
+		s.processManager.GetLogManager().Log("proxy-server", "error", fmt.Sprintf("Proxy error for app %s: %v", targetApp.Name, err))
 		http.Error(w, "Bad Gateway", http.StatusBadGateway)
 	}
 	
@@ -461,14 +538,21 @@ func (s *Server) logApacheFormat(r *http.Request, rw *responseWriter, statusCode
 		duration.Milliseconds(),
 	)
 	
-	// Log at INFO level for successful requests, WARN for client errors, ERROR for server errors
+	// Determine log level based on status code
+	var level string
 	if statusCode >= 500 {
+		level = "error"
 		s.logger.Error(logEntry)
 	} else if statusCode >= 400 {
+		level = "warn"
 		s.logger.Warn(logEntry)
 	} else {
+		level = "info"
 		s.logger.Info(logEntry)
 	}
+	
+	// Also log directly to circular buffer for guvnor logs command
+	s.processManager.GetLogManager().Log("proxy-server", level, logEntry)
 }
 
 // getClientIP extracts the real client IP from request headers

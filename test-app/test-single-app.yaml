@@ -1,0 +1,41 @@
+# Guv'nor Configuration - Generated Automatically
+# Edit this file to customize your application deployment
+# Run 'guvnor start' to start all applications
+
+server:
+  http_port: 8080     # Non-privileged port for development
+  https_port: 8443    # HTTPS port (if TLS enabled)
+  log_level: info       # info, warn, error, debug
+
+apps:
+  - name: test-express-app
+    hostname: localhost    # Access via http://localhost:8080/
+                       # Change to 'my-app.localhost' for subdomain routing
+    port: 3000             # Backend port (your app listens here)
+    command: node
+    args:
+      - "-e"
+      - "const http=require('http'); const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html'}); res.end(`<h1>Test Express App</h1><p>Running on port 3000</p><p>Host: ${req.headers.host}</p>`)}); server.listen(3000, ()=>console.log('Test server running on port 3000'));"
+    health_check:
+      enabled: true
+      path: /          # Health check endpoint
+      interval: 30s       # How often to check
+    restart_policy:
+      enabled: true
+      max_retries: 5      # Retries before giving up
+      backoff: 3s        # Wait time between retries
+
+# TLS/HTTPS Configuration
+tls:
+  enabled: false           # Set to true for production HTTPS
+  auto_cert: false         # Automatic Let's Encrypt certificates
+  cert_dir: ./certs        # Where to store certificates
+  staging: true           # Use Let's Encrypt staging (for testing)
+  force_https: false       # Redirect HTTP to HTTPS
+  # email: your@email.com   # Required for Let's Encrypt (uncomment & set)
+
+# Usage:
+# - Start: guvnor start
+# - View logs: guvnor logs
+# - Check status: guvnor status
+# - Access your app: http://localhost:8080/

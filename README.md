@@ -73,15 +73,19 @@ Guv'nor automatically detects and optimally configures:
 ```bash
 # Initialize and start applications
 guvnor init                      # Setup configuration
-guvnor start                     # Start all processes
+guvnor start                     # Start all apps
+guvnor start web-app             # Start only specific app
 guvnor start --daemon            # Run as background daemon
 
 # Management
-guvnor status                    # Show all processes
-guvnor stop                      # Stop all processes
-guvnor restart web               # Restart specific process
-guvnor logs                      # View logs
-guvnor logs -f                   # Follow logs in real-time
+guvnor status                    # Show all apps
+guvnor status web-app            # Show specific app status
+guvnor stop                      # Stop all apps
+guvnor stop api-service          # Stop specific app
+guvnor restart web-app           # Restart specific app
+guvnor logs                      # View all app logs
+guvnor logs web-app              # View specific app logs
+guvnor logs -f api-service       # Follow specific app logs
 guvnor shell                     # Interactive management
 guvnor validate                  # Check configuration
 ```
@@ -101,54 +105,99 @@ guvnor init
 
 ## Configuration
 
-### Auto-Generated Config (guvnor.yaml)
+### Multi-App Configuration (guvnor.yaml)
 ```yaml
-# Generated automatically by 'guvnor init'
+# Multiple apps with different hostnames
 server:
   http_port: 8080      # Non-privileged for development
   https_port: 8443     # Non-privileged for development
   log_level: info
 
 apps:
-  - name: my-api
-    domain: my-api.localhost    # Smart local domain
+  - name: web-frontend
+    hostname: web.localhost    # Virtual host routing
+    port: 3000                 # Auto-assigned if not specified
+    command: node
+    args: ["server.js"]
+    
+    # Per-app TLS settings
+    tls:
+      enabled: false           # HTTP only for this app
+
+  - name: api-backend
+    hostname: api.localhost    # Different hostname
     port: 8000                 # Framework-appropriate port
     command: uvicorn           # Auto-detected FastAPI
     args: ["main:app", "--host", "0.0.0.0", "--port", "8000"]
+    
+    # TLS enabled for API
+    tls:
+      enabled: true
+      auto_cert: true
+      email: api@localhost
+      staging: true
+    
     health_check:
       enabled: true
       path: /docs             # FastAPI-specific health check
       interval: 30s
-      timeout: 5s
-      retries: 3
-    restart_policy:
-      enabled: true
-      max_retries: 5          # Development-friendly
-      backoff: 3s
 
+  - name: admin-panel
+    # hostname auto-generated as "admin-panel.localhost"
+    # port auto-assigned (6000 in this case)
+    command: python
+    args: ["-m", "streamlit", "run", "admin.py"]
+    
+    tls:
+      enabled: true
+      auto_cert: true
+      email: admin@localhost
+
+# Global TLS settings (fallback)
 tls:
-  enabled: false              # Disabled for local development
-  auto_cert: true            # Ready for production
+  enabled: true              # Default for production
+  cert_dir: ./certs
+  force_https: false         # Allow HTTP for development
 ```
 
 ### Production Configuration
 ```yaml
-# Production settings
+# Production multi-app setup
 server:
   http_port: 80              # Standard HTTP
   https_port: 443           # Standard HTTPS
   log_level: warn           # Production logging
 
 apps:
-  - name: my-api
-    domain: api.myapp.com    # Production domain
-    # ... optimized for production
+  - name: web-app
+    hostname: myapp.com      # Main domain
+    port: 3000
+    command: node
+    args: ["dist/server.js"]
+    
+    tls:
+      enabled: true
+      auto_cert: true
+      email: admin@myapp.com
+      staging: false         # Production certificates
 
+  - name: api-service
+    hostname: api.myapp.com  # API subdomain
+    port: 8000
+    command: uvicorn
+    args: ["main:app", "--host", "0.0.0.0", "--port", "8000"]
+    
+    tls:
+      enabled: true
+      auto_cert: true
+      email: api@myapp.com
+      staging: false
+
+# Global TLS settings
 tls:
-  enabled: true             # TLS enabled
-  auto_cert: true          # Let's Encrypt
-  email: admin@myapp.com   # ACME contact
-  force_https: true        # Redirect HTTP->HTTPS
+  enabled: true             # TLS enabled globally
+  cert_dir: /var/lib/guvnor/certs
+  force_https: true         # Redirect HTTP->HTTPS
 ```
 
 ## Procfile Support
@@ -203,6 +252,49 @@ $ guvnor init                         # Auto-detect
 $ guvnor start                        # Just works
 ```
 
+## Multi-App Management
+
+Guvnor supports running multiple applications with different configurations in a single instance:
+
+### Virtual Host Routing
+Each app gets its own hostname for request routing:
+```bash
+# Requests to different hostnames route to different apps
+curl http://web.localhost:8080        # Routes to web-frontend (port 3000)
+curl http://api.localhost:8080        # Routes to api-backend (port 8000)  
+curl http://admin-panel.localhost:8080 # Routes to admin-panel (port 6000)
+```
+
+### Per-App TLS Configuration
+Each app can have different TLS settings:
+```yaml
+apps:
+  - name: public-web
+    hostname: myapp.com
+    tls:
+      enabled: true      # HTTPS with Let's Encrypt
+      
+  - name: internal-api
+    hostname: internal.myapp.com
+    tls:
+      enabled: false     # HTTP only (internal use)
+```
+
+### App-Specific Operations
+Manage individual apps without affecting others:
+```bash
+guvnor start api-backend     # Start only API
+guvnor stop web-frontend     # Stop only frontend
+guvnor logs admin-panel      # View only admin logs
+guvnor restart api-backend   # Restart only API
+```
+
+### Smart Defaults
+- Hostnames auto-generated as `{app-name}.localhost`
+- Ports auto-assigned (3000, 4000, 5000, etc.)
+- TLS email inherits from global settings
+- Health checks adapt to app type
+
 ## Advanced Features
 
 ### Environment-Specific Deployment
@@ -223,12 +315,21 @@ guvnor start --domain staging.myapp.com --email admin@myapp.com --staging
 guvnor status
 
 # Output:
-# Process Status:
-# PROCESS      STATUS   PID      COMMAND
-# -------      ------   ---      -------
-# web          running  1234     gunicorn app.wsgi
-# worker       running  1235     celery -A app worker
-# redis        running  1236     redis-server
+# App Status (All):
+# APP             PID      STATUS     RESTARTS PORT     UPTIME       COMMAND
+# ---             ---      ------     -------- ----     ------       -------
+# web-frontend    1234     running    0        3000     2h 45m       node server.js
+# api-backend     1235     running    0        8000     2h 45m       uvicorn main:app
+# admin-panel     1236     running    1        6000     1h 30m       python -m streamlit run admin.py
+
+# App-specific status
+guvnor status web-frontend
+
+# Output:
+# App Status: web-frontend
+# APP             PID      STATUS     RESTARTS PORT     UPTIME       COMMAND
+# ---             ---      ------     -------- ----     ------       -------
+# web-frontend    1234     running    0        3000     2h 45m       node server.js
 ```
 
 ### Process Management
