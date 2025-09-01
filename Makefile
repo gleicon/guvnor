@@ -9,7 +9,8 @@ GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 
 # Binary name
-BINARY_NAME=guvnor
+BINARY_NAME=build/guvnor
+BINARY_ALIAS=build/gv
 
 help: ## Display this help message
 	@echo "Guv'nor Build & Test"
@@ -23,9 +24,10 @@ test: ## Run all tests
 
 build: ## Build the guvnor binary
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/guvnor
+	@ln -s $(BINARY_NAME) $(BINARY_ALIAS)
 
 clean: ## Clean build artifacts
 	$(GOCLEAN)
-	rm -f $(BINARY_NAME) gv
+	rm -f $(BINARY_NAME) $(BINARY_ALIAS)
 
 .DEFAULT_GOAL := help
