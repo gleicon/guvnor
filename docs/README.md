@@ -4,8 +4,10 @@ Comprehensive documentation for Guvnor - simple, fast web application deployment
 
 ## Getting Started
 
+**New to Guvnor?** Start here:
+- **[Getting Started Guide](getting-started.md)** - Step-by-step scenarios
+- [Common Workflows](workflows.md) - Daily development tasks
 - [Installation](#installation) - Download and install Guvnor
-- [Quick Start](#quick-start) - Get running in minutes
 - [Configuration](configuration.md) - Complete configuration reference
 - [Examples](examples.md) - Real-world usage examples
 

@@ -1,66 +1,51 @@
 # Guvnor
 
-Simple, fast web application deployment and process management.
-
-**Guvnor** replaces complex infrastructure with a single binary. Zero configuration required - just works!
+Process manager and reverse proxy in one binary.
 
 ## Quick Start
 
 ```bash
-# Initialize in your project directory
+cd your-project
 guvnor init
-
-# Start your applications
 guvnor start
-
-# Production with TLS
-guvnor start --domain myapp.com --email admin@myapp.com
 ```
 
-## Key Features
+Visit `http://your-project.localhost:8080`
 
-- **Zero Configuration** - Auto-detects applications and frameworks
-- **Automatic TLS** - Let's Encrypt certificates with zero setup  
-- **Multi-App Support** - Virtual host routing with per-app configuration
-- **Single Binary** - No dependencies, easy deployment
-- **Process Management** - Automatic restarts and health monitoring
+## Features
 
-## Basic Commands
+- Auto-detects Node.js, Python, Go, Rust, PHP, Java
+- Process management with health checks
+- Virtual host routing
+- Automatic HTTPS via Let's Encrypt
+- Zero dependencies
+
+## Commands
 
 ```bash
-# Setup and management
-guvnor init                 # Generate configuration
-guvnor start [app-name]     # Start apps
-guvnor stop [app-name]      # Stop apps  
-guvnor status [app-name]    # Check status
-guvnor logs [app-name]      # View logs
-guvnor validate             # Check configuration
+guvnor init                 # Generate config
+guvnor start [app]          # Start apps
+guvnor stop [app]           # Stop apps
+guvnor status [app]         # Show status
+guvnor logs [app]           # View logs
 ```
 
-## Configuration Example
+## Config
 
 ```yaml
-# guvnor.yaml
-server:
-  http_port: 8080
-  https_port: 8443
-
 apps:
-  - name: web-app
+  - name: web
     hostname: web.localhost
-    port: 3000
     command: node
     args: ["server.js"]
     
-  - name: api-service  
+  - name: api
     hostname: api.localhost
-    port: 8000
     command: uvicorn
-    args: ["main:app", "--host", "0.0.0.0", "--port", "8000"]
+    args: ["main:app"]
     tls:
       enabled: true
       auto_cert: true
-      email: admin@example.com
 ```
 
 
@@ -76,14 +61,32 @@ sudo mv guvnor /usr/local/bin/
 go install github.com/gleicon/guvnor/cmd/guvnor@latest
 ```
 
+## How It Works
+
+Request → Guvnor (reverse proxy) → Your app
+
+1. Detects apps in your project
+2. Generates config
+3. Starts processes
+4. Routes by hostname
+
+Config priority: `guvnor.yaml` > `Procfile` > auto-detect
+
+## Docs
+
+- [Getting Started](docs/getting-started.md)
+- [Workflows](docs/workflows.md)
+- [Config Reference](docs/configuration.md)
+
 ## Documentation
 
-See the [docs/](docs/) directory for comprehensive guides:
-
+- [Getting Started](docs/getting-started.md) - Step-by-step scenarios
+- [Common Workflows](docs/workflows.md) - Daily development tasks
+- [Configuration](docs/configuration.md) - All configuration options  
 - [Platform Guides](docs/) - Next.js, React, Go, Rust, PHP, Java
-- [SystemD Service](docs/systemd.md) - Running as system service
-- [Configuration](docs/configuration.md) - Advanced configuration options
-- [Examples](docs/examples.md) - Real-world usage examples
+- [Examples](docs/examples.md) - Real-world configurations
+- [Production Setup](docs/systemd.md) - Running as system service
+- [Architecture](docs/architecture.md) - How Guvnor works internally
 
 ## License
 
