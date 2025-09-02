@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guvnor - Process Manager & Reverse Proxy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-lg">G</span>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-900">Guvnor</h1>
+                </div>
+                <nav class="flex space-x-6">
+                    <a href="#docs" class="text-gray-600 hover:text-blue-600 font-medium">Docs</a>
+                    <a href="https://github.com/gleicon/guvnor" class="text-gray-600 hover:text-blue-600 font-medium">GitHub</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="max-w-6xl mx-auto px-4 py-16">
+        <div class="text-center mb-16">
+            <h1 class="text-5xl font-bold text-gray-900 mb-6">
+                Process Manager & Reverse Proxy
+                <span class="block text-blue-600">in One Binary</span>
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+                Auto-detects your apps, manages processes, routes requests, and handles HTTPS. 
+                Zero configuration required.
+            </p>
+            
+            <!-- Terminal Demo -->
+            <div class="bg-gray-900 rounded-xl p-6 text-left max-w-2xl mx-auto mb-8 shadow-2xl">
+                <div class="flex items-center mb-4">
+                    <div class="flex space-x-2">
+                        <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+                        <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                        <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                    </div>
+                    <span class="text-gray-400 ml-4 text-sm font-mono">~/my-project</span>
+                </div>
+                <div class="font-mono text-sm">
+                    <div class="text-gray-400">$ <span class="text-green-400">cd my-project</span></div>
+                    <div class="text-gray-400">$ <span class="text-green-400">guvnor init</span></div>
+                    <div class="text-blue-400">✓ Detected Node.js app</div>
+                    <div class="text-blue-400">✓ Generated guvnor.yaml</div>
+                    <div class="text-gray-400 mt-2">$ <span class="text-green-400">guvnor start</span></div>
+                    <div class="text-blue-400">✓ Started my-project on http://my-project.localhost:8080</div>
+                </div>
+            </div>
+
+            <!-- Install Command -->
+            <div class="bg-gray-100 rounded-lg p-4 max-w-2xl mx-auto mb-8">
+                <div class="flex items-center justify-between">
+                    <code class="font-mono text-sm text-gray-700">curl -sSL https://github.com/gleicon/guvnor/releases/latest/download/guvnor-$(uname -s)-$(uname -m) -o guvnor</code>
+                    <button onclick="copyToClipboard(this)" class="ml-4 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm font-medium">Copy</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="bg-white py-16">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">What Guvnor Does</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Auto-Detection</h3>
+                    <p class="text-gray-600">Scans Node.js, Python, Go, Rust, PHP, Java projects</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Process Management</h3>
+                    <p class="text-gray-600">Starts, stops, restarts, monitors health automatically</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Virtual Hosts</h3>
+                    <p class="text-gray-600">Routes requests by hostname to correct app</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Automatic HTTPS</h3>
+                    <p class="text-gray-600">Let's Encrypt certificates with zero configuration</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Single Binary</h3>
+                    <p class="text-gray-600">No Docker, nginx, or complex setup needed</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Heroku Compatible</h3>
+                    <p class="text-gray-600">Works with existing Procfiles and .env files</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Examples -->
+    <section class="py-16 bg-gray-50">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Quick Examples</h2>
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- New Project -->
+                <div class="bg-white rounded-xl p-6 shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">New Project</h3>
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <code class="font-mono text-sm text-green-400">
+                            mkdir my-app && cd my-app<br>
+                            echo 'console.log("Hello")' > server.js<br>
+                            <span class="text-blue-400">guvnor init && guvnor start</span>
+                        </code>
+                    </div>
+                    <p class="mt-4 text-gray-600">Visit <code class="bg-gray-100 px-2 py-1 rounded font-mono text-sm">http://my-app.localhost:8080</code></p>
+                </div>
+
+                <!-- Existing Project -->
+                <div class="bg-white rounded-xl p-6 shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Existing Project</h3>
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <code class="font-mono text-sm text-green-400">
+                            cd my-project<br>
+                            <span class="text-blue-400">guvnor init</span><br>
+                            <span class="text-blue-400">guvnor start</span>
+                        </code>
+                    </div>
+                    <p class="mt-4 text-gray-600">Auto-detects your app and generates config</p>
+                </div>
+
+                <!-- Multiple Apps -->
+                <div class="bg-white rounded-xl p-6 shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Multiple Apps</h3>
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <code class="font-mono text-sm text-yellow-400">
+                            apps:<br>
+                            &nbsp;&nbsp;- name: web<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;command: npm<br>
+                            &nbsp;&nbsp;- name: api<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;command: python<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;args: ["api.py"]
+                        </code>
+                    </div>
+                    <p class="mt-4 text-gray-600">Each app gets its own hostname</p>
+                </div>
+
+                <!-- Production -->
+                <div class="bg-white rounded-xl p-6 shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Production</h3>
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <code class="font-mono text-sm text-green-400">
+                            <span class="text-blue-400">guvnor start --domain myapp.com \<br>
+                            &nbsp;&nbsp;--email admin@myapp.com</span>
+                        </code>
+                    </div>
+                    <p class="mt-4 text-gray-600">Automatic HTTPS with Let's Encrypt</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation -->
+    <section id="docs" class="bg-white py-16">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Documentation</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <a href="getting-started.html" class="block p-6 bg-gray-50 rounded-xl hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-colors">
+                    <h3 class="font-semibold text-gray-900 mb-2">Getting Started</h3>
+                    <p class="text-gray-600 text-sm">Step-by-step scenarios for new projects, existing apps, and Heroku migrations</p>
+                </a>
+                <a href="workflows.html" class="block p-6 bg-gray-50 rounded-xl hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-colors">
+                    <h3 class="font-semibold text-gray-900 mb-2">Common Workflows</h3>
+                    <p class="text-gray-600 text-sm">Daily development tasks, debugging, and production deployment</p>
+                </a>
+                <a href="configuration.html" class="block p-6 bg-gray-50 rounded-xl hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-colors">
+                    <h3 class="font-semibold text-gray-900 mb-2">Configuration</h3>
+                    <p class="text-gray-600 text-sm">Complete guvnor.yaml reference with all options and examples</p>
+                </a>
+                <a href="examples.html" class="block p-6 bg-gray-50 rounded-xl hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-colors">
+                    <h3 class="font-semibold text-gray-900 mb-2">Examples</h3>
+                    <p class="text-gray-600 text-sm">Real-world configurations for microservices and production setups</p>
+                </a>
+                <a href="systemd.html" class="block p-6 bg-gray-50 rounded-xl hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-colors">
+                    <h3 class="font-semibold text-gray-900 mb-2">Production Setup</h3>
+                    <p class="text-gray-600 text-sm">Running Guvnor as a system service with systemd</p>
+                </a>
+                <a href="architecture.html" class="block p-6 bg-gray-50 rounded-xl hover:bg-blue-50 hover:border-blue-200 border border-transparent transition-colors">
+                    <h3 class="font-semibold text-gray-900 mb-2">Architecture</h3>
+                    <p class="text-gray-600 text-sm">How Guvnor works internally with diagrams and technical details</p>
+                </a>
+            </div>
+
+            <!-- Platform Guides -->
+            <div class="mt-12">
+                <h3 class="text-xl font-semibold text-gray-900 mb-6 text-center">Platform Guides</h3>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="nextjs.html" class="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium">Next.js</a>
+                    <a href="react.html" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">React</a>
+                    <a href="go.html" class="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 font-medium">Go</a>
+                    <a href="rust.html" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium">Rust</a>
+                    <a href="php.html" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">PHP</a>
+                    <a href="java.html" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">Java</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <div class="flex items-center justify-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold">G</span>
+                </div>
+                <span class="text-xl font-bold">Guvnor</span>
+            </div>
+            <p class="text-gray-400 mb-6">Process manager and reverse proxy in one binary</p>
+            <div class="flex justify-center space-x-6">
+                <a href="https://github.com/gleicon/guvnor" class="text-gray-400 hover:text-white">GitHub</a>
+                <a href="https://github.com/gleicon/guvnor/releases" class="text-gray-400 hover:text-white">Releases</a>
+                <a href="https://github.com/gleicon/guvnor/issues" class="text-gray-400 hover:text-white">Issues</a>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-800 text-gray-400 text-sm">
+                MIT License
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function copyToClipboard(button) {
+            const code = button.previousElementSibling.textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

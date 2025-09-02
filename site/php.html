@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>php - Guvnor Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+        .sidebar { min-height: calc(100vh - 4rem); }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <a href="index.html" class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">G</span>
+                        </div>
+                        <span class="text-lg font-bold text-gray-900">Guvnor Docs</span>
+                    </a>
+                </div>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="index.html" class="text-gray-600 hover:text-blue-600 text-sm font-medium">Home</a>
+                    <a href="getting-started.html" class="text-gray-600 hover:text-blue-600 text-sm font-medium">Getting Started</a>
+                    <a href="configuration.html" class="text-gray-600 hover:text-blue-600 text-sm font-medium">Config</a>
+                    <a href="https://github.com/gleicon/guvnor" class="text-gray-600 hover:text-blue-600 text-sm font-medium">GitHub</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex max-w-screen-2xl mx-auto">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r sidebar hidden lg:block">
+            <nav class="p-4 space-y-1">
+                <div class="pb-2 mb-2 border-b">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Getting Started</h3>
+                </div>
+                <a href="getting-started.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">Quick Start</a>
+                <a href="workflows.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">Daily Workflows</a>
+                
+                <div class="pb-2 mb-2 mt-6 border-b">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Configuration</h3>
+                </div>
+                <a href="configuration.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">Config Reference</a>
+                <a href="examples.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">Examples</a>
+                
+                <div class="pb-2 mb-2 mt-6 border-b">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Platform Guides</h3>
+                </div>
+                <a href="nextjs.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">Next.js</a>
+                <a href="react.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">React</a>
+                <a href="go.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">Go</a>
+                <a href="rust.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">Rust</a>
+                <a href="php.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">PHP</a>
+                <a href="java.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">Java</a>
+                
+                <div class="pb-2 mb-2 mt-6 border-b">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Production</h3>
+                </div>
+                <a href="systemd.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">SystemD Service</a>
+                <a href="architecture.html" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">Architecture</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 min-w-0">
+            <div class="px-6 py-8">
+                <article class="max-w-4xl">
+                    <div class="prose prose-lg max-w-none">
+                        <h1 id="how-to-run-your-php-app-with-guvnor">How
+                        to run your PHP app with Guvnor</h1>
+                        <h2 id="setup">Setup</h2>
+                        <div class="sourceCode" id="cb1"><pre
+                        class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> my-php-app</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">composer</span> install <span class="at">--no-dev</span> <span class="at">--optimize-autoloader</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> init</span></code></pre></div>
+                        <h2 id="configuration">Configuration</h2>
+                        <div class="sourceCode" id="cb2"><pre
+                        class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># guvnor.yaml</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">server</span><span class="kw">:</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">http_port</span><span class="kw">:</span><span class="at"> </span><span class="dv">8080</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">https_port</span><span class="kw">:</span><span class="at"> </span><span class="dv">8443</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">log_level</span><span class="kw">:</span><span class="at"> info</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> php-app</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">hostname</span><span class="kw">:</span><span class="at"> localhost</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">port</span><span class="kw">:</span><span class="at"> </span><span class="dv">3000</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">command</span><span class="kw">:</span><span class="at"> php</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">args</span><span class="kw">:</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;-S&quot;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;0.0.0.0:3000&quot;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;-t&quot;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;public&quot;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">working_dir</span><span class="kw">:</span><span class="at"> /path/to/your/php-app</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APP_ENV</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;production&quot;</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">PHP_CLI_SERVER_WORKERS</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;4&quot;</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">health_check</span><span class="kw">:</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /health</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">interval</span><span class="kw">:</span><span class="at"> 30s</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">restart_policy</span><span class="kw">:</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">max_retries</span><span class="kw">:</span><span class="at"> </span><span class="dv">5</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">backoff</span><span class="kw">:</span><span class="at"> 3s</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="fu">tls</span><span class="kw">:</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_cert</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">cert_dir</span><span class="kw">:</span><span class="at"> ./certs</span></span></code></pre></div>
+                        <h2 id="usage">Usage</h2>
+                        <div class="sourceCode" id="cb3"><pre
+                        class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Production deployment</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">composer</span> install <span class="at">--no-dev</span>       <span class="co"># Install dependencies</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> start                    <span class="co"># Access: http://localhost:8080/</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> logs                     <span class="co"># View logs</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> status                   <span class="co"># Check status</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> stop                     <span class="co"># Stop app</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Development</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> start                    <span class="co"># If using dev config below</span></span></code></pre></div>
+                        <h2 id="alternative-configurations">Alternative
+                        Configurations</h2>
+                        <h3 id="laravel-application">Laravel
+                        Application</h3>
+                        <div class="sourceCode" id="cb4"><pre
+                        class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> laravel-app</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">command</span><span class="kw">:</span><span class="at"> php</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">args</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">&quot;artisan&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;serve&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;--host=0.0.0.0&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;--port=3000&quot;</span><span class="kw">]</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APP_ENV</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;production&quot;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APP_KEY</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;your-app-key&quot;</span></span></code></pre></div>
+                        <h3 id="with-php-fpm-nginx">With PHP-FPM +
+                        Nginx</h3>
+                        <div class="sourceCode" id="cb5"><pre
+                        class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> php-fpm</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">command</span><span class="kw">:</span><span class="at"> php-fpm</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">args</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">&quot;--nodaemonize&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;--fpm-config&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;/etc/php-fpm.conf&quot;</span><span class="kw">]</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">port</span><span class="kw">:</span><span class="at"> </span><span class="dv">9000</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> nginx-php</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">hostname</span><span class="kw">:</span><span class="at"> localhost</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">port</span><span class="kw">:</span><span class="at"> </span><span class="dv">3000</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">command</span><span class="kw">:</span><span class="at"> nginx</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">args</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">&quot;-g&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;daemon off;&quot;</span><span class="kw">]</span></span></code></pre></div>
+                        <h3 id="symfony-application">Symfony
+                        Application</h3>
+                        <div class="sourceCode" id="cb6"><pre
+                        class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> symfony-app</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">command</span><span class="kw">:</span><span class="at"> php</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">args</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">&quot;-S&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;0.0.0.0:3000&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;-t&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;public&quot;</span><span class="kw">]</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APP_ENV</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;prod&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APP_SECRET</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;your-app-secret&quot;</span></span></code></pre></div>
+                        <h3 id="development-mode">Development Mode</h3>
+                        <div class="sourceCode" id="cb7"><pre
+                        class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> php-dev</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">command</span><span class="kw">:</span><span class="at"> php</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">args</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">&quot;-S&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;0.0.0.0:3000&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;-t&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;public&quot;</span><span class="kw">]</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APP_ENV</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;development&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APP_DEBUG</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;true&quot;</span></span></code></pre></div>
+                        <h2 id="required-composer.json">Required
+                        composer.json</h2>
+                        <div class="sourceCode" id="cb8"><pre
+                        class="sourceCode json"><code class="sourceCode json"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;my/php-app&quot;</span><span class="fu">,</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;project&quot;</span><span class="fu">,</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;require&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;php&quot;</span><span class="fu">:</span> <span class="st">&quot;&gt;=8.1&quot;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">},</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;autoload&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;psr-4&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;App</span><span class="ch">\\</span><span class="dt">&quot;</span><span class="fu">:</span> <span class="st">&quot;src/&quot;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">},</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;config&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;optimize-autoloader&quot;</span><span class="fu">:</span> <span class="kw">true</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+                        <h2 id="php-requirements">PHP Requirements</h2>
+                        <ul>
+                        <li>PHP 8.1 or higher</li>
+                        <li>Extensions: mbstring, openssl, pdo,
+                        tokenizer</li>
+                        <li>Composer for dependency management</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+        </main>
+
+        <!-- Table of Contents (will be generated by JS) -->
+        <aside class="w-56 hidden xl:block">
+            <div class="sticky top-20 p-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-2">On this page</h3>
+                <div id="toc" class="text-sm space-y-1">
+                    <!-- Generated by JavaScript -->
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <style>
+        /* Enhanced prose styles for API-docs look */
+        .prose h1 {
+            @apply text-3xl font-bold text-gray-900 border-b border-gray-200 pb-3 mb-8;
+        }
+        .prose h2 {
+            @apply text-2xl font-semibold text-gray-900 mt-12 mb-4 scroll-mt-20;
+        }
+        .prose h3 {
+            @apply text-lg font-semibold text-gray-900 mt-8 mb-3 scroll-mt-20;
+        }
+        .prose h4 {
+            @apply text-base font-semibold text-gray-900 mt-6 mb-2;
+        }
+        
+        /* Terminal-style code blocks */
+        .prose pre {
+            @apply bg-gray-900 rounded-lg p-4 overflow-x-auto border shadow-sm;
+            position: relative;
+        }
+        .prose pre::before {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #ff5f57 0%, #ff5f57 25%, transparent 25%), 
+                        radial-gradient(circle, #ffbd2e 0%, #ffbd2e 25%, transparent 25%), 
+                        radial-gradient(circle, #28ca42 0%, #28ca42 25%, transparent 25%);
+            background-position: 0 0, 20px 0, 40px 0;
+            background-size: 20px 12px;
+            background-repeat: no-repeat;
+        }
+        .prose pre code {
+            @apply text-green-400 bg-transparent p-0 text-sm font-mono;
+            padding-left: 60px;
+            display: block;
+        }
+        
+        /* Inline code */
+        .prose code:not(pre code) {
+            @apply bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono;
+        }
+        
+        /* Links */
+        .prose a {
+            @apply text-blue-600 hover:text-blue-700 no-underline font-medium;
+        }
+        .prose a:hover {
+            @apply underline;
+        }
+        
+        /* Lists */
+        .prose ul {
+            @apply space-y-2;
+        }
+        .prose ol {
+            @apply space-y-2;
+        }
+        .prose li {
+            @apply leading-relaxed;
+        }
+        
+        /* Tables */
+        .prose table {
+            @apply w-full border-collapse bg-white rounded-lg shadow-sm overflow-hidden;
+        }
+        .prose th {
+            @apply bg-gray-50 border-b border-gray-200 px-4 py-3 text-left font-semibold text-gray-900;
+        }
+        .prose td {
+            @apply border-b border-gray-200 px-4 py-3 text-gray-700;
+        }
+        .prose tr:last-child td {
+            @apply border-b-0;
+        }
+        
+        /* Blockquotes */
+        .prose blockquote {
+            @apply bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg;
+        }
+        .prose blockquote p {
+            @apply text-blue-800 italic mb-0;
+        }
+        
+        /* API-style sections */
+        .prose .api-section {
+            @apply border border-gray-200 rounded-lg p-6 my-6 bg-white shadow-sm;
+        }
+        .prose .api-method {
+            @apply inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-mono uppercase;
+        }
+        .prose .api-endpoint {
+            @apply font-mono text-lg text-gray-900;
+        }
+        
+        /* Command sections */
+        .prose .command-section {
+            @apply bg-white border border-gray-200 rounded-lg p-6 my-6 shadow-sm;
+        }
+        .prose .command-title {
+            @apply text-lg font-semibold text-gray-900 mb-2;
+        }
+        .prose .command-description {
+            @apply text-gray-600 mb-4;
+        }
+        
+        /* YAML/Config sections */
+        .prose .config-section {
+            @apply grid md:grid-cols-2 gap-6 my-8;
+        }
+        .prose .config-example {
+            @apply bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm;
+        }
+        .prose .config-header {
+            @apply bg-gray-50 px-4 py-2 border-b border-gray-200;
+        }
+        .prose .config-content {
+            @apply p-0;
+        }
+    </style>
+
+    <script>
+        // Generate table of contents
+        document.addEventListener('DOMContentLoaded', function() {
+            const toc = document.getElementById('toc');
+            const headings = document.querySelectorAll('.prose h2, .prose h3');
+            
+            if (headings.length === 0 || !toc) return;
+            
+            headings.forEach((heading, index) => {
+                const id = heading.id || `heading-`;
+                heading.id = id;
+                
+                const link = document.createElement('a');
+                link.href = `#`;
+                link.textContent = heading.textContent;
+                link.className = heading.tagName === 'H2' 
+                    ? 'block text-gray-700 hover:text-blue-600 py-1' 
+                    : 'block text-gray-500 hover:text-blue-600 py-1 ml-3 text-xs';
+                
+                toc.appendChild(link);
+            });
+        });
+        
+        // Copy code block functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre code');
+            
+            codeBlocks.forEach(code => {
+                const pre = code.parentElement;
+                const button = document.createElement('button');
+                button.textContent = 'Copy';
+                button.className = 'absolute top-3 right-3 bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs';
+                
+                button.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(code.textContent);
+                        button.textContent = 'Copied!';
+                        setTimeout(() => button.textContent = 'Copy', 2000);
+                    } catch (err) {
+                        console.error('Failed to copy:', err);
+                    }
+                });
+                
+                pre.style.position = 'relative';
+                pre.appendChild(button);
+            });
+        });
+    </script>
+</body>
+</html>

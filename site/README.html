@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>README - Guvnor Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <a href="index.html" class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold">G</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900">Guvnor</span>
+                    </a>
+                </div>
+                <nav class="flex space-x-4">
+                    <a href="index.html" class="text-gray-600 hover:text-blue-600 font-medium">Home</a>
+                    <a href="getting-started.html" class="text-gray-600 hover:text-blue-600 font-medium">Docs</a>
+                    <a href="https://github.com/gleicon/guvnor" class="text-gray-600 hover:text-blue-600 font-medium">GitHub</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <article class="bg-white rounded-xl shadow-sm p-8 prose prose-lg max-w-none">
+            <h1 id="guvnor-documentation">Guvnor Documentation</h1>
+            <p>Comprehensive documentation for Guvnor - simple, fast web
+            application deployment and process management.</p>
+            <h2 id="getting-started">Getting Started</h2>
+            <p><strong>New to Guvnor?</strong> Start here: - <strong><a
+            href="getting-started.md">Getting Started Guide</a></strong>
+            - Step-by-step scenarios - <a href="workflows.md">Common
+            Workflows</a> - Daily development tasks - <a
+            href="#installation">Installation</a> - Download and install
+            Guvnor - <a href="configuration.md">Configuration</a> -
+            Complete configuration reference - <a
+            href="examples.md">Examples</a> - Real-world usage
+            examples</p>
+            <h2 id="platform-guides">Platform Guides</h2>
+            <p>Framework-specific setup guides:</p>
+            <ul>
+            <li><a href="nextjs.md">Next.js Applications</a> - React
+            framework with SSR/SSG</li>
+            <li><a href="react.md">React Applications</a> - Single-page
+            React applications<br />
+            </li>
+            <li><a href="go.md">Go Applications</a> - Go web services
+            and APIs</li>
+            <li><a href="rust.md">Rust Applications</a> - Rust web
+            applications</li>
+            <li><a href="php.md">PHP Applications</a> - PHP web
+            applications and frameworks</li>
+            <li><a href="java.md">Java Applications</a> - Java web
+            applications and Spring Boot</li>
+            </ul>
+            <h2 id="production-deployment">Production Deployment</h2>
+            <ul>
+            <li><a href="systemd.md">SystemD Service</a> - Running as
+            system service</li>
+            <li><a
+            href="configuration.md#multi-app-configuration">Multi-App
+            Setup</a> - Multiple applications with virtual hosts</li>
+            <li><a href="configuration.md#tls-configuration">TLS
+            Configuration</a> - HTTPS and Let’s Encrypt setup</li>
+            </ul>
+            <h2 id="installation">Installation</h2>
+            <div class="sourceCode" id="cb1"><pre
+            class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Download latest release</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sSL</span> https://github.com/gleicon/guvnor/releases/latest/download/guvnor-<span class="va">$(</span><span class="fu">uname</span> <span class="at">-s</span><span class="va">)</span>-<span class="va">$(</span><span class="fu">uname</span> <span class="at">-m</span><span class="va">)</span> <span class="at">-o</span> guvnor</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x guvnor</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mv guvnor /usr/local/bin/</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Or install with Go</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> install github.com/gleicon/guvnor/cmd/guvnor@latest</span></code></pre></div>
+            <h2 id="quick-start">Quick Start</h2>
+            <div class="sourceCode" id="cb2"><pre
+            class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize in your project directory</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> init</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Start your applications</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> start</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Production with TLS</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> start <span class="at">--domain</span> myapp.com <span class="at">--email</span> admin@myapp.com</span></code></pre></div>
+            <h2 id="key-concepts">Key Concepts</h2>
+            <ul>
+            <li><strong>Zero Configuration</strong>: Auto-detects
+            applications and generates optimal configuration</li>
+            <li><strong>Multi-App Support</strong>: Run multiple
+            applications with virtual host routing</li>
+            <li><strong>Process Management</strong>: Automatic restarts,
+            health monitoring, and graceful shutdowns</li>
+            <li><strong>TLS Termination</strong>: Automatic Let’s
+            Encrypt certificates with per-app configuration</li>
+            <li><strong>Single Binary</strong>: No dependencies, easy
+            deployment</li>
+            </ul>
+            <h2 id="basic-commands">Basic Commands</h2>
+            <div class="sourceCode" id="cb3"><pre
+            class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> init                 <span class="co"># Generate configuration</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> start <span class="pp">[</span><span class="ss">app</span><span class="pp">-</span><span class="ss">name</span><span class="pp">]</span>     <span class="co"># Start apps</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> stop <span class="pp">[</span><span class="ss">app</span><span class="pp">-</span><span class="ss">name</span><span class="pp">]</span>      <span class="co"># Stop apps  </span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> status <span class="pp">[</span><span class="ss">app</span><span class="pp">-</span><span class="ss">name</span><span class="pp">]</span>    <span class="co"># Check status</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> logs <span class="pp">[</span><span class="ss">app</span><span class="pp">-</span><span class="ss">name</span><span class="pp">]</span>      <span class="co"># View logs</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="ex">guvnor</span> validate             <span class="co"># Check configuration</span></span></code></pre></div>
+            <h2 id="architecture">Architecture</h2>
+            <p>Guvnor provides:</p>
+            <ol type="1">
+            <li><strong>Application Detection</strong>: Automatically
+            detects and configures applications</li>
+            <li><strong>Process Supervision</strong>: Manages
+            application lifecycles with health monitoring</li>
+            <li><strong>Reverse Proxy</strong>: Routes requests with
+            hostname-based virtual hosts</li>
+            <li><strong>TLS Management</strong>: Automatic certificate
+            provisioning and renewal</li>
+            <li><strong>Log Aggregation</strong>: Centralized logging
+            with circular buffer storage</li>
+            </ol>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-16">
+        <div class="max-w-4xl mx-auto px-4 py-8 text-center">
+            <div class="flex justify-center space-x-6 mb-4">
+                <a href="getting-started.html" class="text-gray-600 hover:text-blue-600">Getting Started</a>
+                <a href="configuration.html" class="text-gray-600 hover:text-blue-600">Configuration</a>
+                <a href="examples.html" class="text-gray-600 hover:text-blue-600">Examples</a>
+                <a href="systemd.html" class="text-gray-600 hover:text-blue-600">Production</a>
+            </div>
+            <p class="text-gray-400 text-sm">MIT License</p>
+        </div>
+    </footer>
+
+    <style>
+        /* Custom prose styles for better code blocks */
+        .prose pre {
+            @apply bg-gray-900 text-green-400 rounded-lg;
+        }
+        .prose code {
+            @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono;
+        }
+        .prose pre code {
+            @apply bg-transparent p-0;
+        }
+        .prose h1 {
+            @apply text-3xl font-bold text-gray-900 border-b-2 border-blue-600 pb-2;
+        }
+        .prose h2 {
+            @apply text-2xl font-semibold text-gray-900 mt-8 mb-4;
+        }
+        .prose h3 {
+            @apply text-xl font-semibold text-gray-900 mt-6 mb-3;
+        }
+        .prose a {
+            @apply text-blue-600 hover:text-blue-700 no-underline;
+        }
+        .prose blockquote {
+            @apply bg-blue-50 border-l-4 border-blue-600 p-4 italic;
+        }
+        .prose table {
+            @apply w-full border-collapse;
+        }
+        .prose th, .prose td {
+            @apply border border-gray-300 px-4 py-2 text-left;
+        }
+        .prose th {
+            @apply bg-gray-100 font-semibold;
+        }
+    </style>
+</body>
+</html>
