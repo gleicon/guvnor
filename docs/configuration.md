@@ -1,48 +1,35 @@
-# Configuration
+# Configuration Reference
 
-Guvnor configuration through `guvnor.yaml` files.
+Complete reference for `guvnor.yaml` configuration.
 
-## Basic Structure
+## Server Configuration
 
 ```yaml
-# guvnor.yaml
 server:
-  http_port: 8080      # HTTP port (default: 8080)
-  https_port: 8443     # HTTPS port (default: 8443)
-  log_level: info      # Log level: debug, info, warn, error
+  http_port: 8080      # Default: 8080
+  https_port: 8443     # Default: 8443  
+  log_level: info      # debug, info, warn, error
+```
 
+## Application Configuration
+
+### Required Parameters
+
+```yaml
 apps:
-  - name: web-app               # App identifier
-    hostname: web.localhost     # Hostname for virtual host routing
-    port: 3000                  # App port (auto-assigned if omitted)
-    command: node               # Command to run
-    args: ["server.js"]         # Command arguments
-    working_dir: /path/to/app   # Working directory (default: current)
-    
-    environment:                # Environment variables
-      NODE_ENV: production
-      
-    health_check:               # Health monitoring
-      enabled: true
-      path: /health
-      interval: 30s
-      
-    restart_policy:             # Restart behavior
-      enabled: true
-      max_retries: 5
-      backoff: 3s
-      
-    tls:                        # Per-app TLS settings
-      enabled: true
-      auto_cert: true
-      email: admin@example.com
-      staging: false
+  - name: webapp       # Required: unique identifier
+    command: node      # Required: command to run
+```
 
-# Global TLS settings (fallback)
-tls:
-  enabled: true
-  cert_dir: ./certs
-  force_https: false
+### Optional Parameters
+
+```yaml
+apps:
+  - name: webapp
+    hostname: web.localhost    # Default: {name}.localhost
+    port: 3000                # Default: auto-assigned
+    args: ["server.js"]       # Default: []
+    working_dir: ./app        # Default: current dir
 ```
 
 ## Multi-App Configuration

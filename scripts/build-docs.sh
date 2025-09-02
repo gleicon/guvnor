@@ -25,27 +25,36 @@ if command -v pandoc >/dev/null 2>&1; then
             filename=$(basename "$md_file" .md)
             echo "Converting $filename.md -> $filename.html"
             
+            # Choose template based on file type
+            template="$DOCS_DIR/template-docs.html"
+            if [[ "$filename" == "index" ]] || [[ "$filename" == "README" ]]; then
+                template="$DOCS_DIR/template.html"
+            fi
+            
             pandoc "$md_file" \
                 --from markdown \
                 --to html5 \
                 --standalone \
-                --css style.css \
-                --template="$DOCS_DIR/template.html" \
+                --template="$template" \
                 --output "$BUILD_DIR/$filename.html" \
-                --metadata title="Guvnor Documentation - $filename" \
+                --metadata title="$filename - Guvnor Documentation" \
+                --table-of-contents \
+                --toc-depth=3 \
                 2>/dev/null || \
             pandoc "$md_file" \
                 --from markdown \
                 --to html5 \
                 --standalone \
-                --css style.css \
+                --template="$template" \
                 --output "$BUILD_DIR/$filename.html" \
-                --metadata title="Guvnor Documentation - $filename"
+                --metadata title="$filename - Guvnor Documentation"
         fi
     done
     
-    # Create index.html from README.md
-    if [[ -f "$DOCS_DIR/README.md" ]]; then
+    # Use custom index.html if it exists, otherwise create from README.md
+    if [[ -f "$DOCS_DIR/index.html" ]]; then
+        cp "$DOCS_DIR/index.html" "$BUILD_DIR/index.html"
+    elif [[ -f "$BUILD_DIR/README.html" ]]; then
         cp "$BUILD_DIR/README.html" "$BUILD_DIR/index.html"
     fi
     
@@ -86,10 +95,17 @@ EOF
         fi
     done
     
-    # Create index.html from README
-    if [[ -f "$BUILD_DIR/README.html" ]]; then
+    # Use custom index.html if it exists, otherwise create from README
+    if [[ -f "$DOCS_DIR/index.html" ]]; then
+        cp "$DOCS_DIR/index.html" "$BUILD_DIR/index.html"
+    elif [[ -f "$BUILD_DIR/README.html" ]]; then
         cp "$BUILD_DIR/README.html" "$BUILD_DIR/index.html"
     fi
+fi
+
+# Copy custom index.html if exists (for non-pandoc mode too)
+if [[ -f "$DOCS_DIR/index.html" ]]; then
+    cp "$DOCS_DIR/index.html" "$BUILD_DIR/index.html"
 fi
 
 # Create CSS file

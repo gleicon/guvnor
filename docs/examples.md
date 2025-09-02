@@ -1,47 +1,41 @@
 # Examples
 
-Real-world examples of Guvnor deployment and usage.
+Real-world configuration examples for common scenarios.
 
-## Zero Configuration Deployment
+## Node.js App
 
-```bash
-# Auto-detect and run applications
-cd my-project
-guvnor init                 # Detects apps and generates config
-guvnor start                # Starts all applications
+```yaml
+apps:
+  - name: webapp
+    hostname: app.localhost
+    command: npm
+    args: ["start"]
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
 ```
 
-## Development Workflow
+## Python FastAPI
 
-```bash
-# Initialize project
-guvnor init
-
-# Generated output:
-# Detecting applications...
-# Found 3 applications:
-#   - frontend (nodejs) 
-#   - api (python)
-#   - worker (python)
-# Created: guvnor.yaml
-
-# Start development servers
-guvnor start
-
-# Manage individual processes
-guvnor restart api
-guvnor logs frontend
-guvnor status
+```yaml
+apps:
+  - name: api
+    hostname: api.localhost
+    command: uvicorn
+    args: ["main:app", "--host", "0.0.0.0", "--reload"]
+    environment:
+      DATABASE_URL: sqlite:///./test.db
 ```
 
-## Production Deployment
+## Go Application
 
-```bash
-# Deploy with automatic TLS
-guvnor start --domain myapp.com --email admin@myapp.com
-
-# Or configure in guvnor.yaml and start
-guvnor start
+```yaml
+apps:
+  - name: server
+    hostname: go.localhost
+    command: go
+    args: ["run", "main.go"]
+    working_dir: ./cmd/server
 ```
 
 ## Multi-Service Architecture

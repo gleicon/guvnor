@@ -36,22 +36,28 @@ test: ## Run all tests
 	@echo "Running tests..."
 	go test -v ./internal/...
 
-docs-serve: docs-build ## Build and serve documentation
+docs-serve: ## Serve documentation with MkDocs
 	@echo "Serving documentation at http://localhost:${DOCS_PORT}"
-	@cd ${DOCS_BUILD_DIR} && python3 -m http.server ${DOCS_PORT}
+	@echo "Open http://localhost:${DOCS_PORT} in your browser"
+	@export PATH="/Users/gleicon/.local/bin:$$PATH" && mkdocs serve --dev-addr=localhost:${DOCS_PORT}
 
-docs-build: ## Build documentation site
-	@echo "Building documentation site..."
-	@mkdir -p ${DOCS_BUILD_DIR}
-	@./scripts/build-docs.sh ${DOCS_DIR} ${DOCS_BUILD_DIR}
-	@echo "Documentation built in ${DOCS_BUILD_DIR}"
+docs-build: ## Build documentation site with MkDocs
+	@echo "Building documentation site with MkDocs..."
+	@export PATH="/Users/gleicon/.local/bin:$$PATH" && mkdocs build
+	@echo "Documentation built in site/"
 
 docs-clean: ## Clean documentation build
 	@echo "Cleaning documentation build..."
-	@rm -rf ${DOCS_BUILD_DIR}
+	@rm -rf site/
 
 docs: docs-clean docs-build ## Generate static documentation site
-	@echo "Documentation ready at ${DOCS_BUILD_DIR}/index.html"
+	@echo "Documentation ready at site/index.html"
+
+docs-package: docs-build ## Package documentation for deployment
+	@echo "Packaging documentation for deployment..."
+	@tar -czf docs.tar.gz -C site .
+	@echo "Documentation packaged as docs.tar.gz"
+	@echo "Upload site/ directory or extract docs.tar.gz to your hosting provider"
 
 help: ## Display this help message
 	@echo "Guvnor Build & Documentation"

@@ -1,35 +1,28 @@
-# Common Workflows
-
-Daily workflows and common tasks with Guvnor.
+# Daily Workflows
 
 ## Development Workflow
 
-### Starting a New Day
+Start your project:
 ```bash
 cd my-project
-guvnor start      # Start all configured apps
+guvnor start
 guvnor status     # Check everything is running
-
-# Visit your apps:
-# http://web.localhost:8080
-# http://api.localhost:8080
 ```
 
-### Making Changes
+View logs:
 ```bash
-# Code changes are live (if your app supports hot reload)
-# For apps that need restart:
-guvnor restart api-service
-
-# View logs for debugging
-guvnor logs api-service
-guvnor logs         # All apps
+guvnor logs webapp -f    # Follow specific app
+guvnor logs -f           # Follow all apps
 ```
 
-### End of Day
+Restart after changes:
 ```bash
-guvnor stop        # Stop all apps
-# Or just close terminal (apps stop automatically)
+guvnor restart webapp
+```
+
+Stop everything:
+```bash
+guvnor stop
 ```
 
 ## Adding New Services

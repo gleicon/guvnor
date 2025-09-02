@@ -1,0 +1,72 @@
+site_name: Guvnor Documentation
+site_description: Process manager and reverse proxy in one binary
+# site_url: # Commented out for relative links
+repo_url: https://github.com/gleicon/guvnor
+repo_name: gleicon/guvnor
+use_directory_urls: false
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode  
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.select
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Quick Start: getting-started.md
+    - Daily Workflows: workflows.md
+  - Configuration:
+    - Config Reference: configuration.md
+    - Examples: examples.md
+  - Platform Guides:
+    - Next.js: nextjs.md
+    - React: react.md
+    - Go: go.md
+    - Rust: rust.md
+    - PHP: php.md
+    - Java: java.md
+  - Production:
+    - SystemD Service: systemd.md
+    - Architecture: architecture.md

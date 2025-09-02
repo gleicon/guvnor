@@ -1,5 +1,19 @@
 # Getting Started
 
+## Installation
+
+Download binary:
+```bash
+curl -sSL https://github.com/gleicon/guvnor/releases/latest/download/guvnor-$(uname -s)-$(uname -m) -o guvnor
+chmod +x guvnor
+sudo mv guvnor /usr/local/bin/
+```
+
+Or install with Go:
+```bash
+go install github.com/gleicon/guvnor/cmd/guvnor@latest
+```
+
 ## New Project
 
 ```bash
@@ -21,9 +35,7 @@ guvnor init
 guvnor start
 ```
 
-Guvnor detects your app and generates config.
-
-## Heroku App
+## Foreman and Procfile/Heroku style app
 
 ```bash
 # Existing Procfile:
@@ -45,7 +57,7 @@ apps:
   - name: web
     command: npm
     args: ["start"]
-  - name: api  
+  - name: api
     command: python
     args: ["api.py"]
 ```
@@ -64,7 +76,7 @@ Automatic HTTPS with Let's Encrypt.
 
 ```bash
 guvnor start    # Start apps
-guvnor logs     # View logs  
+guvnor logs     # View logs
 guvnor restart  # Restart all
 guvnor stop     # Stop all
 ```
@@ -78,7 +90,7 @@ guvnor stop     # Stop all
 ## Files
 
 - `guvnor.yaml` - Main config
-- `Procfile` - Heroku compatibility
+- `Procfile` - Foreman compatibility
 - `.env` - Environment variables
 
 ## Docs
