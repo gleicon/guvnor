@@ -24,7 +24,3 @@ func New(debug bool) *logrus.Logger {
 	return logger
 }
 
-// WithComponent returns a logger with a component field set
-func WithComponent(log *logrus.Logger, component string) *logrus.Entry {
-	return log.WithField("component", component)
-}

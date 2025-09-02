@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	
+	"github.com/gleicon/guvnor/internal/common"
 )
 
 // App represents a discovered application
@@ -306,7 +308,7 @@ func detectDockerApp(appDir, baseDir string) *App {
 
 func detectPythonFramework(appDir string) string {
 	// Check for Django
-	if fileExists(filepath.Join(appDir, "manage.py")) {
+	if common.FileExists(filepath.Join(appDir, "manage.py")) {
 		return "django"
 	}
 	
@@ -420,17 +422,13 @@ func shouldSkipDir(name string) bool {
 	return strings.HasPrefix(name, ".")
 }
 
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
 
 // File finder functions
 
 func findPythonMain(dir string) string {
 	candidates := []string{"main.py", "app.py", "server.py", "run.py"}
 	for _, candidate := range candidates {
-		if fileExists(filepath.Join(dir, candidate)) {
+		if common.FileExists(filepath.Join(dir, candidate)) {
 			return candidate
 		}
 	}
@@ -441,7 +439,7 @@ func findFlaskApp(dir string) string {
 	candidates := []string{"app.py", "main.py", "server.py", "application.py"}
 	for _, candidate := range candidates {
 		path := filepath.Join(dir, candidate)
-		if fileExists(path) {
+		if common.FileExists(path) {
 			// Check if it's actually a Flask app
 			if content, err := os.ReadFile(path); err == nil {
 				if strings.Contains(strings.ToLower(string(content)), "flask") {
@@ -457,7 +455,7 @@ func findFastAPIMain(dir string) string {
 	candidates := []string{"main.py", "app.py", "api.py", "server.py"}
 	for _, candidate := range candidates {
 		path := filepath.Join(dir, candidate)
-		if fileExists(path) {
+		if common.FileExists(path) {
 			if content, err := os.ReadFile(path); err == nil {
 				if strings.Contains(strings.ToLower(string(content)), "fastapi") {
 					return strings.TrimSuffix(candidate, ".py") + ":app"
@@ -471,7 +469,7 @@ func findFastAPIMain(dir string) string {
 func findStreamlitMain(dir string) string {
 	candidates := []string{"app.py", "main.py", "streamlit_app.py"}
 	for _, candidate := range candidates {
-		if fileExists(filepath.Join(dir, candidate)) {
+		if common.FileExists(filepath.Join(dir, candidate)) {
 			return candidate
 		}
 	}

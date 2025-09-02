@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -23,6 +22,7 @@ import (
 	"github.com/gleicon/guvnor/internal/process"
 	"github.com/gleicon/guvnor/internal/procfile"
 	"github.com/gleicon/guvnor/internal/server"
+	"github.com/gleicon/guvnor/internal/common"
 	"github.com/gleicon/guvnor/pkg/logger"
 )
 
@@ -280,7 +280,7 @@ func runInit(cmd *cobra.Command, args []string) {
 
 	// 2. Create Procfile
 	procfilePath := targetDir + "/Procfile"
-	if !fileExists(procfilePath) || force {
+	if !common.FileExists(procfilePath) || force {
 		if len(apps) > 0 {
 			if err := procfile.CreateSmartProcfile(procfilePath, apps); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to create Procfile: %v\n", err)
@@ -300,7 +300,7 @@ func runInit(cmd *cobra.Command, args []string) {
 
 	// 3. Create .env file
 	envPath := targetDir + "/.env"
-	if !fileExists(envPath) || force {
+	if !common.FileExists(envPath) || force {
 		if err := env.CreateSampleEnvFile(envPath); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create .env: %v\n", err)
 			os.Exit(1)
@@ -312,7 +312,7 @@ func runInit(cmd *cobra.Command, args []string) {
 
 	// 4. Create guvnor.yaml config
 	configPath := targetDir + "/guvnor.yaml"
-	if !fileExists(configPath) || force {
+	if !common.FileExists(configPath) || force {
 		cfg := createSmartConfig(apps, minimal)
 		if err := config.WriteConfig(cfg, configPath); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to create config: %v\n", err)
@@ -774,10 +774,6 @@ func formatDuration(d time.Duration) string {
 	}
 }
 
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
 
 func loadProcfile() (*procfile.Procfile, error) {
 	procfilePath, err := procfile.FindProcfile(".")
@@ -875,33 +871,6 @@ func updateGitignore(path string) error {
 	return nil
 }
 
-// Helper functions for command execution
-func runCommand(cmd string) error {
-	parts := strings.Fields(cmd)
-	if len(parts) == 0 {
-		return fmt.Errorf("empty command")
-	}
-
-	execCmd := exec.Command(parts[0], parts[1:]...)
-	execCmd.Stdout = os.Stdout
-	execCmd.Stderr = os.Stderr
-	return execCmd.Run()
-}
-
-func runCommandOutput(cmd string) string {
-	parts := strings.Fields(cmd)
-	if len(parts) == 0 {
-		return ""
-	}
-
-	execCmd := exec.Command(parts[0], parts[1:]...)
-	output, err := execCmd.Output()
-	if err != nil {
-		return ""
-	}
-
-	return string(output)
-}
 
 // Certificate management commands
 

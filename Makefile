@@ -30,6 +30,7 @@ install: build ## Install to /usr/local/bin
 clean: ## Clean build artifacts
 	@echo "Cleaning..."
 	@rm -rf ${BUILD_DIR}
+	@rm -rf ${BINARY_NAME}
 	@rm -rf ${DOCS_BUILD_DIR}
 
 test: ## Run all tests

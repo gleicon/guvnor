@@ -222,23 +222,6 @@ func CreateSmartProcfile(path string, apps []*discovery.App) error {
 	return WriteProcfile(pf, path)
 }
 
-// ImportFromForeman imports a Foreman-style Procfile
-func ImportFromForeman(foremanPath, targetPath string) error {
-	// Foreman Procfiles are already in the standard format
-	pf, err := ParseProcfile(foremanPath)
-	if err != nil {
-		return fmt.Errorf("failed to parse Foreman Procfile: %w", err)
-	}
-
-	// Add guvnorspecific enhancements
-	pf.Metadata = map[string]string{
-		"imported_from": "foreman",
-		"source":        foremanPath,
-		"enhanced_by":   "guvnor",
-	}
-
-	return WriteProcfile(pf, targetPath)
-}
 
 // ConvertToDiscoveryApps converts Procfile processes to discovery.App format
 func (pf *Procfile) ConvertToDiscoveryApps(basePath string) ([]*discovery.App, error) {
@@ -467,7 +450,3 @@ func (pf *Procfile) ValidateEnvironment() []string {
 	return warnings
 }
 
-// CreateDotEnvFile creates a .env file template
-func CreateDotEnvFile(path string) error {
-	return env.CreateSampleEnvFile(path)
-}

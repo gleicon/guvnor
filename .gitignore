@@ -1,8 +1,8 @@
 # Guv'nor .gitignore
 
 # Binaries
-buiid/guvnor
-buid/gv
+build/guvnor
+build/gv
 *.exe
 *.exe~
 *.dll
