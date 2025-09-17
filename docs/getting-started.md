@@ -75,10 +75,17 @@ Automatic HTTPS with Let's Encrypt.
 ## Daily Use
 
 ```bash
-guvnor start    # Start apps
-guvnor logs     # View logs
-guvnor restart  # Restart all
-guvnor stop     # Stop all
+guvnor start      # Start apps
+guvnor logs       # View logs  
+guvnor logs -f    # Follow logs (real-time)
+guvnor status     # Check process status
+guvnor restart    # Restart all
+guvnor stop       # Stop all
+
+# 🆕 Certificate management
+guvnor cert info    # Show certificate information
+guvnor cert renew   # Renew expiring certificates
+guvnor cert cleanup # Clean up expired certificates
 ```
 
 ## Config Priority
@@ -93,8 +100,45 @@ guvnor stop     # Stop all
 - `Procfile` - Foreman compatibility
 - `.env` - Environment variables
 
+## 🆕 Advanced Features
+
+### Request Tracking
+Enable distributed tracing across your microservices:
+
+```yaml
+# guvnor.yaml
+server:
+  enable_tracking: true
+  tracking_header: "X-GUVNOR-TRACKING"
+```
+
+Track requests across services with UUID chains for complete observability.
+
+### Certificate Headers
+Inject client certificate information into your applications:
+
+```yaml
+# guvnor.yaml  
+tls:
+  certificate_headers: true
+```
+
+Your backend receives certificate details as HTTP headers for authentication and audit.
+
+### Management API
+Monitor and control your processes programmatically:
+
+```bash
+# Check process status
+curl http://localhost:9080/api/status
+
+# Stream logs
+curl http://localhost:9080/api/logs?process=web-app&follow=true
+```
+
 ## Docs
 
 - [Config Reference](configuration.md)
 - [Examples](examples.md)
+- [Certificates & Tracking](certificates_and_tracking.md) 🆕
 - [Production](systemd.md)

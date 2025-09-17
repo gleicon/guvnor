@@ -404,3 +404,271 @@ Load specific configuration:
 guvnor start --config dev.guvnor.yaml
 guvnor start --config prod.guvnor.yaml
 ```
+
+## 🆕 Advanced Features Examples
+
+### Request Tracking & Certificate Headers
+
+```yaml
+# Enterprise configuration with full observability
+server:
+  http_port: 8080
+  https_port: 8443
+  log_level: info
+  
+  # 🆕 Request tracking for distributed tracing
+  enable_tracking: true
+  tracking_header: "X-REQUEST-ID"   # Custom header name
+
+apps:
+  # Frontend with certificate-based auth
+  - name: secure-portal
+    hostname: portal.company.com
+    port: 3000
+    command: node
+    args: ["server.js"]
+    tls:
+      enabled: true
+      auto_cert: true
+      email: security@company.com
+      certificate_headers: true     # 🆕 Inject certificate info
+    environment:
+      # Your app receives these headers:
+      # X-Certificate-Detected: on/off
+      # X-Certificate-CN: CN=John Doe,OU=IT,O=Company
+      # X-Certificate-Subject: full subject string
+      # X-Certificate-Serial: certificate serial number
+      NODE_ENV: production
+
+  # API service with request tracking  
+  - name: api-gateway
+    hostname: api.company.com
+    port: 8000
+    command: uvicorn
+    args: ["gateway.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    tls:
+      enabled: true
+      auto_cert: true
+      certificate_headers: true
+    environment:
+      # Your app receives tracking headers:
+      # X-REQUEST-ID: uuid1;uuid2;uuid3 (chain of UUIDs)
+      LOG_LEVEL: info
+
+# Global certificate header injection
+tls:
+  certificate_headers: true         # 🆕 Enable globally
+  enabled: true
+  cert_dir: /var/lib/guvnor/certs
+  force_https: true
+```
+
+### Microservices with Full Observability
+
+```yaml
+# Complete microservices setup with tracking
+server:
+  enable_tracking: true
+  tracking_header: "X-TRACE-ID"
+
+apps:
+  # API Gateway - entry point for all requests
+  - name: gateway
+    hostname: gateway.company.com
+    port: 8080
+    command: node
+    args: ["gateway.js"]
+    tls:
+      enabled: true
+      auto_cert: true
+    # Receives: X-TRACE-ID: uuid1
+    # Forwards: X-TRACE-ID: uuid1;uuid2
+    
+  # User Service - handles authentication
+  - name: user-service
+    hostname: users.company.com
+    port: 8001
+    command: python
+    args: ["-m", "users.main"]
+    tls:
+      enabled: true
+      auto_cert: true
+      certificate_headers: true     # Gets client cert info
+    # Receives: X-TRACE-ID: uuid1;uuid2
+    # Forwards: X-TRACE-ID: uuid1;uuid2;uuid3
+    
+  # Payment Service - secure transactions
+  - name: payment-service
+    hostname: payments.company.com
+    port: 8002
+    command: go
+    args: ["run", "cmd/payments/main.go"]
+    tls:
+      enabled: true
+      auto_cert: true
+      certificate_headers: true     # Critical for payment security
+    # Receives: X-TRACE-ID: uuid1;uuid2;uuid3
+    # Can validate client certificates via headers
+
+tls:
+  certificate_headers: true
+```
+
+### Real-Time Monitoring Setup
+
+```yaml
+# Production setup with comprehensive monitoring
+server:
+  http_port: 80
+  https_port: 443
+  enable_tracking: true             # 🆕 Track all requests
+  log_level: info
+
+apps:
+  # Main application
+  - name: webapp
+    hostname: myapp.com
+    port: 3000
+    command: node
+    args: ["dist/server.js"]
+    tls:
+      enabled: true
+      auto_cert: true
+      email: ops@myapp.com
+    health_check:
+      enabled: true
+      path: /health
+      interval: 15s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # Monitoring dashboard
+  - name: monitoring
+    hostname: monitor.myapp.com
+    port: 3001
+    command: node
+    args: ["monitor/server.js"]
+    tls:
+      enabled: true
+      auto_cert: true
+    environment:
+      # Monitor receives tracking data from logs
+      GUVNOR_API_URL: http://localhost:9080/api
+```
+
+### Certificate Management Examples
+
+```bash
+# Certificate management commands
+guvnor cert info                    # Show all certificates
+guvnor cert info secure.myapp.com   # Show specific domain
+
+# Certificate output example:
+# DOMAIN                     STATUS      NOT BEFORE           NOT AFTER            PATH
+# secure.myapp.com          valid       2025-01-15 10:30     2025-04-15 10:30     /var/lib/guvnor/certs/secure.myapp.com.crt
+# api.myapp.com             expiring    2025-01-01 08:00     2025-09-20 08:00     /var/lib/guvnor/certs/api.myapp.com.crt
+
+guvnor cert renew                   # Renew expiring certificates
+guvnor cert cleanup                 # Remove expired certificates
+```
+
+### Request Tracking in Application Code
+
+**Node.js Example:**
+```javascript
+// Your Node.js app receives tracking headers
+app.use((req, res, next) => {
+  const traceId = req.headers['x-request-id'];
+  const certDetected = req.headers['x-certificate-detected'];
+  const certCN = req.headers['x-certificate-cn'];
+  
+  console.log(`Request ${traceId} from ${certCN || 'anonymous'}`);
+  
+  // When making downstream requests, forward the header
+  axios.get('http://api-service', {
+    headers: { 'X-Request-ID': traceId }
+  });
+  
+  next();
+});
+```
+
+**Python FastAPI Example:**
+```python
+from fastapi import FastAPI, Request
+import httpx
+
+app = FastAPI()
+
+@app.middleware("http")
+async def tracking_middleware(request: Request, call_next):
+    trace_id = request.headers.get("x-request-id")
+    cert_cn = request.headers.get("x-certificate-cn")
+    
+    print(f"Request {trace_id} from {cert_cn or 'anonymous'}")
+    
+    # Forward tracking header to downstream services
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "http://another-service",
+            headers={"X-Request-ID": trace_id}
+        )
+    
+    return await call_next(request)
+```
+
+### Advanced Log Analysis
+
+With request tracking enabled, your logs include complete request journeys:
+
+```bash
+# Example log entries showing request flow:
+[2025-09-15T00:45:12] "GET /api/users" 200 app=gateway rt=5ms track=a1b2c3d4-e5f6-7890-abcd-ef1234567890
+[2025-09-15T00:45:12] "GET /users/profile" 200 app=user-service rt=15ms track=a1b2c3d4-e5f6-7890-abcd-ef1234567890;b2c3d4e5-f6g7-8901-bcde-f23456789012
+[2025-09-15T00:45:12] "GET /payments/history" 200 app=payment-service rt=25ms track=a1b2c3d4-e5f6-7890-abcd-ef1234567890;b2c3d4e5-f6g7-8901-bcde-f23456789012;c3d4e5f6-g7h8-9012-cdef-345678901234
+
+# Use grep/awk to trace complete request journeys:
+grep "a1b2c3d4-e5f6-7890-abcd-ef1234567890" /var/log/guvnor.log
+```
+
+### Production Security Configuration
+
+```yaml
+# High-security production setup
+server:
+  http_port: 80
+  https_port: 443
+  enable_tracking: true
+  tracking_header: "X-REQUEST-ID"
+  log_level: warn
+
+apps:
+  - name: secure-api
+    hostname: secure-api.company.com
+    port: 8000
+    command: gunicorn
+    args: ["app.wsgi:application", "--bind", "0.0.0.0:8000"]
+    tls:
+      enabled: true
+      auto_cert: true
+      email: security@company.com
+      certificate_headers: true     # Required for client cert auth
+      staging: false                # Production certificates only
+    environment:
+      # Your app validates clients via certificate headers
+      REQUIRE_CLIENT_CERT: "true"
+      TRUSTED_CERT_ISSUERS: "CN=Company CA,O=Company Inc"
+    health_check:
+      enabled: true
+      path: /security/health
+      interval: 10s
+    restart_policy:
+      enabled: true
+      max_retries: 3
+
+tls:
+  certificate_headers: true
+  force_https: true                 # Redirect all HTTP to HTTPS
+  cert_dir: /var/lib/guvnor/certs
+```

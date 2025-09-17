@@ -60,6 +60,8 @@ nav:
   - Configuration:
     - Config Reference: configuration.md
     - Examples: examples.md
+  - Security & Tracking:
+    - Certificates & Tracking: certificates_and_tracking.md
   - Platform Guides:
     - Next.js: nextjs.md
     - React: react.md
