@@ -1,0 +1,78 @@
+# Guvnor Configuration - Request Tracking Demo
+# This example shows how to use the X-GUVNOR-TRACKING header to trace requests across services
+
+server:
+  http_port: 8080
+  https_port: 8443
+  log_level: debug              # Enable debug logging to see tracking info
+  tracking_header: "X-GUVNOR-TRACKING"  # Configurable header name
+  enable_tracking: true         # Enable request tracking
+
+apps:
+  # Login Service - First service users interact with
+  - name: login-service
+    hostname: login.localhost
+    port: 3001
+    command: node
+    args: ["login-server.js"]
+    working_dir: ./services/login
+    environment:
+      NODE_ENV: "development"
+      PORT: "3001"
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 3
+
+  # Dashboard Service - Users go here after login
+  - name: dashboard-service
+    hostname: dashboard.localhost
+    port: 3002
+    command: node
+    args: ["dashboard-server.js"]
+    working_dir: ./services/dashboard
+    environment:
+      NODE_ENV: "development"
+      PORT: "3002"
+      LOGIN_SERVICE_URL: "http://login.localhost:8080"
+    health_check:
+      enabled: true
+      path: /health
+
+  # Checkout Service - Final service in the user journey
+  - name: checkout-service
+    hostname: checkout.localhost
+    port: 3003
+    command: node
+    args: ["checkout-server.js"]
+    working_dir: ./services/checkout
+    environment:
+      NODE_ENV: "development"
+      PORT: "3003"
+      DASHBOARD_SERVICE_URL: "http://dashboard.localhost:8080"
+    health_check:
+      enabled: true
+      path: /health
+
+tls:
+  enabled: false                # Disabled for local development
+  auto_cert: false
+  force_https: false
+  certificate_headers: false
+
+# Usage Example:
+# 1. User visits: http://login.localhost:8080/
+#    - Guvnor generates: X-GUVNOR-TRACKING: uuid1
+#
+# 2. Login service makes API call to dashboard: 
+#    - Request includes: X-GUVNOR-TRACKING: uuid1
+#    - Guvnor appends: X-GUVNOR-TRACKING: uuid1;uuid2
+#
+# 3. Dashboard service calls checkout:
+#    - Request includes: X-GUVNOR-TRACKING: uuid1;uuid2
+#    - Guvnor appends: X-GUVNOR-TRACKING: uuid1;uuid2;uuid3
+#
+# This allows you to trace the complete user journey across all services!

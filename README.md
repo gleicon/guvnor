@@ -18,6 +18,8 @@ Visit `http://your-project.localhost:8080`
 - Process management with health checks
 - Virtual host routing
 - Automatic HTTPS via Let's Encrypt
+- Certificate header injection (valve-inspired)
+- Request tracking with UUID4 chaining
 - Zero dependencies
 
 ## Commands
@@ -38,7 +40,7 @@ apps:
     hostname: web.localhost
     command: node
     args: ["server.js"]
-    
+
   - name: api
     hostname: api.localhost
     command: uvicorn
@@ -82,11 +84,12 @@ Config priority: `guvnor.yaml` > `Procfile` > auto-detect
 
 - [Getting Started](docs/getting-started.md) - Step-by-step scenarios
 - [Common Workflows](docs/workflows.md) - Daily development tasks
-- [Configuration](docs/configuration.md) - All configuration options  
-- [Platform Guides](docs/) - Next.js, React, Go, Rust, PHP, Java
+- [Configuration](docs/configuration.md) - All configuration options
+- [Client Platform Guides](docs/) - Next.js, React, Go, Rust, PHP, Java
 - [Examples](docs/examples.md) - Real-world configurations
 - [Production Setup](docs/systemd.md) - Running as system service
 - [Architecture](docs/architecture.md) - How Guvnor works internally
+- [Certificates and tracking](certificates_and_tracking.md) - Certificate headers and request tracking
 
 ## License
 

@@ -26,6 +26,9 @@ type ServerConfig struct {
 	WriteTimeout    time.Duration `yaml:"write_timeout" default:"30s"`
 	ShutdownTimeout time.Duration `yaml:"shutdown_timeout" default:"30s"`
 	LogLevel        string        `yaml:"log_level" default:"info"`
+	// Request tracking configuration
+	TrackingHeader  string        `yaml:"tracking_header" default:"X-GUVNOR-TRACKING"`
+	EnableTracking  bool          `yaml:"enable_tracking" default:"true"`
 }
 
 // AppConfig defines configuration for an individual application
@@ -45,12 +48,13 @@ type AppConfig struct {
 
 // AppTLSConfig contains per-app TLS configuration
 type AppTLSConfig struct {
-	Enabled   bool   `yaml:"enabled" default:"false"`
-	AutoCert  bool   `yaml:"auto_cert" default:"true"`
-	Email     string `yaml:"email,omitempty"`
-	Staging   bool   `yaml:"staging" default:"false"`
-	CertFile  string `yaml:"cert_file,omitempty"`  // For manual certs
-	KeyFile   string `yaml:"key_file,omitempty"`   // For manual certs
+	Enabled            bool   `yaml:"enabled" default:"false"`
+	AutoCert           bool   `yaml:"auto_cert" default:"true"`
+	Email              string `yaml:"email,omitempty"`
+	Staging            bool   `yaml:"staging" default:"false"`
+	CertFile           string `yaml:"cert_file,omitempty"`  // For manual certs
+	KeyFile            string `yaml:"key_file,omitempty"`   // For manual certs
+	CertificateHeaders bool   `yaml:"certificate_headers,omitempty"` // Per-app header injection (valve-inspired)
 }
 
 // HealthCheckConfig defines health check parameters for an app
@@ -71,13 +75,15 @@ type RestartPolicy struct {
 
 // TLSConfig contains global TLS and Let's Encrypt configuration
 type TLSConfig struct {
-	Enabled    bool     `yaml:"enabled" default:"true"`
-	AutoCert   bool     `yaml:"auto_cert" default:"true"`
-	CertDir    string   `yaml:"cert_dir" default:"/var/lib/guvnor/certs"`
-	Email      string   `yaml:"email,omitempty"`      // Fallback email for apps without one
-	Domains    []string `yaml:"domains,omitempty"`    // DEPRECATED: domains now per-app
-	Staging    bool     `yaml:"staging" default:"false"`
-	ForceHTTPS bool     `yaml:"force_https" default:"true"`
+	Enabled             bool     `yaml:"enabled" default:"true"`
+	AutoCert            bool     `yaml:"auto_cert" default:"true"`
+	CertDir             string   `yaml:"cert_dir" default:"/var/lib/guvnor/certs"`
+	Email               string   `yaml:"email,omitempty"`      // Fallback email for apps without one
+	Domains             []string `yaml:"domains,omitempty"`    // DEPRECATED: domains now per-app
+	Staging             bool     `yaml:"staging" default:"false"`
+	ForceHTTPS          bool     `yaml:"force_https" default:"true"`
+	// Valve-inspired certificate header injection
+	CertificateHeaders  bool       `yaml:"certificate_headers" default:"false"` // Inject certificate info as headers
 }
 
 // Load loads configuration from a file, applying defaults
@@ -91,6 +97,8 @@ func Load(configFile string) (*Config, error) {
 			WriteTimeout:    30 * time.Second,
 			ShutdownTimeout: 30 * time.Second,
 			LogLevel:        "info",
+			TrackingHeader:  "X-GUVNOR-TRACKING",
+			EnableTracking:  true,
 		},
 		TLS: TLSConfig{
 			Enabled:    true,
@@ -243,6 +251,8 @@ func CreateSample(filename string) error {
 			WriteTimeout:    30 * time.Second,
 			ShutdownTimeout: 30 * time.Second,
 			LogLevel:        "info",
+			TrackingHeader:  "X-GUVNOR-TRACKING",
+			EnableTracking:  true,
 		},
 		Apps: []AppConfig{
 			{
@@ -269,10 +279,11 @@ func CreateSample(filename string) error {
 					Backoff:    5 * time.Second,
 				},
 				TLS: AppTLSConfig{
-					Enabled:  true,
-					AutoCert: true,
-					Email:    "admin@example.com",
-					Staging:  false,
+					Enabled:            true,
+					AutoCert:           true,
+					Email:              "admin@example.com",
+					Staging:            false,
+					CertificateHeaders: true, // Enable certificate header injection
 				},
 			},
 			{
@@ -298,20 +309,22 @@ func CreateSample(filename string) error {
 					Backoff:    5 * time.Second,
 				},
 				TLS: AppTLSConfig{
-					Enabled:  true,
-					AutoCert: true,
-					Email:    "api-admin@example.com",
-					Staging:  false,
+					Enabled:            true,
+					AutoCert:           true,
+					Email:              "api-admin@example.com",
+					Staging:            false,
+					CertificateHeaders: false, // Disable for this app
 				},
 			},
 		},
 		TLS: TLSConfig{
-			Enabled:    true,
-			AutoCert:   true,
-			CertDir:    "/var/lib/guvnor/certs",
-			Email:      "admin@example.com",
-			Staging:    false,
-			ForceHTTPS: true,
+			Enabled:            true,
+			AutoCert:           true,
+			CertDir:            "/var/lib/guvnor/certs",
+			Email:              "admin@example.com",
+			Staging:            false,
+			ForceHTTPS:         true,
+			CertificateHeaders: false, // Global setting (can be overridden per-app)
 		},
 	}
 

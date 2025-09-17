@@ -18,6 +18,10 @@ Visit `http://your-project.localhost:8080`
 - Process management with health checks
 - Virtual host routing
 - Automatic HTTPS via Let's Encrypt
+- **Request tracking with UUID chains** 🆕
+- **Certificate header injection (valve-inspired)** 🆕
+- Apache-style access logging
+- Management API for monitoring
 - Zero dependencies
 
 ## Installation
@@ -75,6 +79,10 @@ guvnor logs [app]           # View logs
 ## Configuration
 
 ```yaml title="guvnor.yaml"
+server:
+  enable_tracking: true              # 🆕 Request tracking
+  tracking_header: "X-GUVNOR-TRACKING"
+
 apps:
   - name: web
     hostname: web.localhost
@@ -88,6 +96,10 @@ apps:
     tls:
       enabled: true
       auto_cert: true
+      certificate_headers: true      # 🆕 Certificate injection
+
+tls:
+  certificate_headers: true          # 🆕 Global certificate headers
 ```
 
 ## How It Works

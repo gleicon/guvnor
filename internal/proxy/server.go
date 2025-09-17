@@ -472,6 +472,12 @@ func (s *Server) proxyRequest(w http.ResponseWriter, r *http.Request) {
 			req.Header.Set("X-Forwarded-Proto", "http")
 		}
 		req.Header.Set("X-Forwarded-Host", r.Host)
+		
+		// Inject request tracking header (UUID4 chain)
+		s.injectTrackingHeader(req, r)
+		
+		// Inject certificate headers (valve-inspired)
+		s.injectCertificateHeaders(req, r, targetApp)
 	}
 	
 	// Handle proxy errors
@@ -525,8 +531,15 @@ func (s *Server) logApacheFormat(r *http.Request, rw *responseWriter, statusCode
 		userAgent = "-"
 	}
 	
-	// Log entry format: clientIP - - [timestamp] "requestLine" statusCode size "referer" "userAgent" app responseTime
-	logEntry := fmt.Sprintf(`%s - - [%s] "%s" %d %d "%s" "%s" app=%s rt=%dms`,
+	// Get tracking information for logging
+	trackingInfo := s.getTrackingInfo(r)
+	trackingStr := ""
+	if trackingInfo != nil {
+		trackingStr = fmt.Sprintf(" track=%s", trackingInfo["tracking_chain"])
+	}
+	
+	// Log entry format: clientIP - - [timestamp] "requestLine" statusCode size "referer" "userAgent" app responseTime tracking
+	logEntry := fmt.Sprintf(`%s - - [%s] "%s" %d %d "%s" "%s" app=%s rt=%dms%s`,
 		clientIP,
 		timestamp,
 		requestLine,
@@ -536,6 +549,7 @@ func (s *Server) logApacheFormat(r *http.Request, rw *responseWriter, statusCode
 		userAgent,
 		app,
 		duration.Milliseconds(),
+		trackingStr,
 	)
 	
 	// Determine log level based on status code
@@ -577,4 +591,65 @@ func getClientIP(r *http.Request) string {
 	}
 	
 	return r.RemoteAddr
+}
+
+// injectCertificateHeaders injects certificate information as headers (valve-inspired)
+// This mimics valve's behavior of adding certificate details as HTTP headers
+func (s *Server) injectCertificateHeaders(req *http.Request, r *http.Request, targetApp *config.AppConfig) {
+	// Check if certificate headers are enabled globally or for this specific app
+	globalEnabled := s.config.TLS.CertificateHeaders
+	appEnabled := targetApp.TLS.CertificateHeaders
+	
+	if !globalEnabled && !appEnabled {
+		return // Certificate headers not enabled
+	}
+	
+	// Default to "off" - similar to valve's X-CERTIFICATE-DETECTED: off
+	req.Header.Set("X-Certificate-Detected", "off")
+	
+	// Only process if we have a TLS connection
+	if r.TLS == nil || len(r.TLS.PeerCertificates) == 0 {
+		s.logger.Debug("No TLS connection or peer certificates available for header injection")
+		return
+	}
+	
+	// Get the first peer certificate (client certificate)
+	clientCert := r.TLS.PeerCertificates[0]
+	if clientCert == nil {
+		return
+	}
+	
+	// Set certificate detected to "on"
+	req.Header.Set("X-Certificate-Detected", "on")
+	
+	// Extract certificate information using our utility functions
+	certInfo := cert.ExtractCertificateInfo(clientCert)
+	if certInfo != nil {
+		// Add valve-style X-CERTIFICATE-CN header with formatted subject
+		req.Header.Set("X-Certificate-CN", cert.FormatCertificateSubject(clientCert))
+		
+		// Add additional certificate information headers
+		req.Header.Set("X-Certificate-Subject", certInfo.Subject)
+		req.Header.Set("X-Certificate-Issuer", certInfo.Issuer)
+		req.Header.Set("X-Certificate-Serial", certInfo.Serial)
+		req.Header.Set("X-Certificate-Not-Before", certInfo.NotBefore)
+		req.Header.Set("X-Certificate-Not-After", certInfo.NotAfter)
+		
+		if certInfo.IsExpired {
+			req.Header.Set("X-Certificate-Status", "expired")
+		} else {
+			req.Header.Set("X-Certificate-Status", "valid")
+		}
+		
+		s.logger.WithFields(logrus.Fields{
+			"app":         targetApp.Name,
+			"common_name": certInfo.CommonName,
+			"serial":      certInfo.Serial,
+		}).Debug("Injected certificate headers")
+		
+		// Log to process manager for visibility
+		s.processManager.GetLogManager().Log("proxy-server", "debug", 
+			fmt.Sprintf("Certificate headers injected for %s: CN=%s, Serial=%s", 
+				targetApp.Name, certInfo.CommonName, certInfo.Serial))
+	}
 }
