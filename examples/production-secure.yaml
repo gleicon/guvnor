@@ -1,0 +1,158 @@
+# Production Security Configuration
+# Enterprise setup with TLS, certificate headers, and request tracking
+
+server:
+  http_port: 80
+  https_port: 443
+  log_level: warn
+  enable_tracking: true
+  tracking_header: "X-REQUEST-ID"
+  read_timeout: 30s
+  write_timeout: 30s
+  shutdown_timeout: 30s
+
+apps:
+  # Frontend Application (React/Next.js)
+  - name: frontend
+    hostname: mycompany.com
+    port: 3000
+    command: node
+    args: ["dist/server.js"]
+    working_dir: ./frontend
+    environment:
+      NODE_ENV: production
+      API_URL: https://api.mycompany.com
+      PORT: "3000"
+    tls:
+      enabled: true
+      auto_cert: true
+      email: ops@mycompany.com
+      staging: false
+      certificate_headers: false  # No client certs for public frontend
+    health_check:
+      enabled: true
+      path: /health
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart_policy:
+      enabled: true
+      max_retries: 10
+      backoff: 10s
+
+  # API Backend (Go/Node.js/Python)
+  - name: api
+    hostname: api.mycompany.com
+    port: 8000
+    command: ./api-server
+    args: ["--config", "production.json"]
+    working_dir: ./backend
+    environment:
+      ENV: production
+      DATABASE_URL: "postgres://api_user:$DB_PASSWORD@db.internal:5432/api_db"
+      REDIS_URL: "redis://cache.internal:6379/0"
+      JWT_SECRET: "$JWT_SECRET"
+      LOG_LEVEL: "warn"
+    tls:
+      enabled: true
+      auto_cert: true
+      email: api@mycompany.com
+      staging: false
+      certificate_headers: true  # Enable for API authentication
+    health_check:
+      enabled: true
+      path: /api/health
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart_policy:
+      enabled: true
+      max_retries: 10
+      backoff: 10s
+
+  # Admin Panel (Secure with client certificates)
+  - name: admin
+    hostname: admin.mycompany.com
+    port: 9000
+    command: python
+    args: ["-m", "admin.main"]
+    working_dir: ./admin
+    environment:
+      ENV: production
+      DATABASE_URL: "postgres://admin_user:$ADMIN_DB_PASSWORD@db.internal:5432/admin_db"
+      SECRET_KEY: "$ADMIN_SECRET_KEY"
+      REQUIRE_CLIENT_CERT: "true"
+    tls:
+      enabled: true
+      auto_cert: true
+      email: admin@mycompany.com
+      staging: false
+      certificate_headers: true  # Required for admin authentication
+    health_check:
+      enabled: true
+      path: /admin/health
+      interval: 30s
+      timeout: 10s
+      retries: 2
+    restart_policy:
+      enabled: true
+      max_retries: 5
+      backoff: 30s
+
+  # Monitoring Dashboard
+  - name: monitoring
+    hostname: monitor.mycompany.com
+    port: 3001
+    command: node
+    args: ["monitor-server.js"]
+    working_dir: ./monitoring
+    environment:
+      NODE_ENV: production
+      GUVNOR_API_URL: "http://localhost:9080/api"
+      METRICS_ENDPOINT: "https://api.mycompany.com/metrics"
+    tls:
+      enabled: true
+      auto_cert: true
+      email: monitor@mycompany.com
+      staging: false
+      certificate_headers: true  # Secure monitoring access
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+# Global TLS Configuration
+tls:
+  enabled: true
+  auto_cert: true
+  cert_dir: /var/lib/guvnor/certs
+  force_https: true
+  certificate_headers: true
+  staging: false
+  domains:
+    - mycompany.com
+    - api.mycompany.com
+    - admin.mycompany.com
+    - monitor.mycompany.com
+
+# Security Features Enabled:
+# ✅ Automatic HTTPS with Let's Encrypt
+# ✅ Certificate header injection for authentication
+# ✅ Request tracking across all services
+# ✅ Health checks with aggressive monitoring
+# ✅ Automatic process restart on failure
+# ✅ HTTP to HTTPS redirection
+# ✅ Production-grade timeouts and limits
+
+# Deployment Notes:
+# 1. Set environment variables for secrets (DB_PASSWORD, JWT_SECRET, etc.)
+# 2. Configure DNS A records pointing to your server
+# 3. Ensure ports 80 and 443 are open
+# 4. Run as root or with CAP_NET_BIND_SERVICE for port 80/443
+# 5. Consider running behind a firewall with only 80/443 exposed
+
+# Usage:
+# sudo guvnor start --config production-secure.yaml

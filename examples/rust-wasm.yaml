@@ -1,0 +1,117 @@
+# Rust + WebAssembly Development Setup
+# Modern Rust backend with WASM frontend compilation
+
+server:
+  http_port: 8080
+  https_port: 8443
+  log_level: info
+  enable_tracking: true
+  tracking_header: "X-RUST-TRACE"
+
+apps:
+  # Rust Backend API (Axum/Warp)
+  - name: rust-api
+    hostname: api.localhost
+    port: 8000
+    command: cargo
+    args: ["watch", "-x", "run --bin api-server"]
+    working_dir: .
+    environment:
+      RUST_LOG: "info"
+      DATABASE_URL: "postgres://postgres:password@localhost:5432/rust_db"
+      JWT_SECRET: "dev-secret-key"
+      PORT: "8000"
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # Rust WebAssembly Frontend (Yew/Leptos)
+  - name: wasm-frontend
+    hostname: app.localhost
+    port: 8001
+    command: trunk
+    args: ["serve", "--address", "0.0.0.0", "--port", "8001"]
+    working_dir: ./frontend
+    environment:
+      TRUNK_SERVE_PORT: "8001"
+      TRUNK_SERVE_HOST: "0.0.0.0"
+    health_check:
+      enabled: true
+      path: /
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 3
+
+  # WebAssembly Build Watcher
+  - name: wasm-builder
+    port: 8002
+    command: cargo
+    args: ["watch", "-w", "frontend/src", "-x", "build --target wasm32-unknown-unknown"]
+    working_dir: .
+    environment:
+      RUST_LOG: "warn"
+    restart_policy:
+      enabled: true
+      max_retries: 10
+
+  # PostgreSQL Database
+  - name: postgres
+    port: 5432
+    command: docker
+    args: ["run", "--rm", "-p", "5432:5432",
+           "-e", "POSTGRES_DB=rust_db",
+           "-e", "POSTGRES_USER=postgres",
+           "-e", "POSTGRES_PASSWORD=password",
+           "postgres:15"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 5432
+      interval: 20s
+
+  # Redis for Session Storage
+  - name: redis
+    port: 6379
+    command: docker
+    args: ["run", "--rm", "-p", "6379:6379", "redis:7-alpine"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 6379
+      interval: 20s
+
+tls:
+  enabled: false
+  certificate_headers: false
+
+# Required Tools:
+# - cargo install cargo-watch
+# - cargo install trunk
+# - rustup target add wasm32-unknown-unknown
+
+# Project Structure:
+# ├── Cargo.toml
+# ├── src/
+# │   ├── main.rs
+# │   └── bin/
+# │       └── api-server.rs
+# ├── frontend/
+# │   ├── Cargo.toml
+# │   ├── Trunk.toml
+# │   ├── index.html
+# │   └── src/
+# │       └── main.rs
+# └── guvnor.yaml
+
+# Usage:
+# 1. cargo new --bin rust-wasm-project && cd rust-wasm-project
+# 2. Create frontend/ subdirectory with Yew/Leptos project
+# 3. Install required tools (see above)
+# 4. Run: guvnor start
+# 5. API: http://api.localhost:8080
+# 6. Frontend: http://app.localhost:8080

@@ -1,0 +1,167 @@
+# PHP Laravel Application with Queue Workers
+# Complete Laravel setup with MySQL, Redis, and background processing
+
+server:
+  http_port: 8080
+  https_port: 8443
+  log_level: info
+  enable_tracking: true
+  tracking_header: "X-LARAVEL-TRACE"
+
+apps:
+  # Laravel Web Application
+  - name: laravel-web
+    hostname: app.localhost
+    port: 8000
+    command: php
+    args: ["artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+    working_dir: .
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_KEY: "base64:your-app-key-here"
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: laravel_db
+      DB_USERNAME: laravel_user
+      DB_PASSWORD: password
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      CACHE_DRIVER: redis
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # Laravel Queue Worker
+  - name: laravel-queue
+    port: 8001
+    command: php
+    args: ["artisan", "queue:work", "--verbose", "--tries=3", "--timeout=90"]
+    working_dir: .
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: laravel_db
+      DB_USERNAME: laravel_user
+      DB_PASSWORD: password
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      QUEUE_CONNECTION: redis
+    health_check:
+      enabled: true
+      command: ["php", "artisan", "queue:monitor"]
+      interval: 60s
+    restart_policy:
+      enabled: true
+      max_retries: 10
+
+  # Laravel Scheduler
+  - name: laravel-scheduler
+    port: 8002
+    command: php
+    args: ["artisan", "schedule:work"]
+    working_dir: .
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: laravel_db
+      DB_USERNAME: laravel_user
+      DB_PASSWORD: password
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # MySQL Database
+  - name: mysql
+    port: 3306
+    command: docker
+    args: ["run", "--rm", "-p", "3306:3306",
+           "-e", "MYSQL_ROOT_PASSWORD=rootpassword",
+           "-e", "MYSQL_DATABASE=laravel_db",
+           "-e", "MYSQL_USER=laravel_user",
+           "-e", "MYSQL_PASSWORD=password",
+           "-v", "mysql_data:/var/lib/mysql",
+           "mysql:8.0"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 3306
+      interval: 20s
+
+  # Redis for Queues/Cache/Sessions
+  - name: redis
+    port: 6379
+    command: docker
+    args: ["run", "--rm", "-p", "6379:6379", "redis:7-alpine"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 6379
+      interval: 20s
+
+  # Laravel Horizon (Queue Dashboard)
+  - name: horizon
+    hostname: horizon.localhost
+    port: 8003
+    command: php
+    args: ["artisan", "horizon"]
+    working_dir: .
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: laravel_db
+      DB_USERNAME: laravel_user
+      DB_PASSWORD: password
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+    health_check:
+      enabled: true
+      path: /horizon
+      interval: 60s
+    restart_policy:
+      enabled: true
+      max_retries: 3
+
+  # MailHog for Email Testing
+  - name: mailhog
+    hostname: mail.localhost
+    port: 8025
+    command: docker
+    args: ["run", "--rm", "-p", "1025:1025", "-p", "8025:8025", "mailhog/mailhog"]
+    health_check:
+      enabled: true
+      path: /
+      interval: 30s
+
+tls:
+  enabled: false
+  certificate_headers: false
+
+# Required Setup:
+# 1. composer install
+# 2. php artisan key:generate
+# 3. php artisan migrate
+# 4. composer require laravel/horizon (optional)
+
+# Usage:
+# 1. Create Laravel project: laravel new myproject && cd myproject
+# 2. Configure .env file with database settings
+# 3. Run migrations: php artisan migrate
+# 4. Run: guvnor start
+# 5. Web: http://app.localhost:8080
+# 6. Horizon: http://horizon.localhost:8080
+# 7. MailHog: http://mail.localhost:8080

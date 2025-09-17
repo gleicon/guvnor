@@ -1,0 +1,112 @@
+# Python FastAPI Application with Background Workers
+# Modern Python stack with FastAPI, Celery, and Redis
+
+server:
+  http_port: 8080
+  https_port: 8443
+  log_level: info
+  enable_tracking: true
+  tracking_header: "X-TRACE-ID"
+
+apps:
+  # FastAPI Main Application
+  - name: fastapi-app
+    hostname: api.localhost
+    port: 8000
+    command: uvicorn
+    args: ["app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    working_dir: .
+    environment:
+      DATABASE_URL: postgresql://postgres:password@localhost:5432/fastapi_db
+      REDIS_URL: redis://localhost:6379/0
+      SECRET_KEY: dev-secret-key-change-in-production
+      DEBUG: "true"
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # Celery Worker for Background Tasks
+  - name: celery-worker
+    port: 8001
+    command: celery
+    args: ["-A", "app.celery_app", "worker", "--loglevel=info", "--concurrency=4"]
+    working_dir: .
+    environment:
+      DATABASE_URL: postgresql://postgres:password@localhost:5432/fastapi_db
+      REDIS_URL: redis://localhost:6379/0
+    health_check:
+      enabled: true
+      command: ["celery", "-A", "app.celery_app", "inspect", "ping"]
+      interval: 60s
+    restart_policy:
+      enabled: true
+      max_retries: 10
+
+  # Celery Beat Scheduler
+  - name: celery-beat
+    port: 8002
+    command: celery
+    args: ["-A", "app.celery_app", "beat", "--loglevel=info"]
+    working_dir: .
+    environment:
+      DATABASE_URL: postgresql://postgres:password@localhost:5432/fastapi_db
+      REDIS_URL: redis://localhost:6379/0
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # PostgreSQL Database
+  - name: postgres
+    port: 5432
+    command: docker
+    args: ["run", "--rm", "-p", "5432:5432",
+           "-e", "POSTGRES_DB=fastapi_db",
+           "-e", "POSTGRES_USER=postgres", 
+           "-e", "POSTGRES_PASSWORD=password",
+           "-v", "postgres_data:/var/lib/postgresql/data",
+           "postgres:15"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 5432
+      interval: 20s
+
+  # Redis for Celery
+  - name: redis
+    port: 6379
+    command: docker
+    args: ["run", "--rm", "-p", "6379:6379", "redis:7-alpine"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 6379
+      interval: 20s
+
+  # Flower - Celery Monitoring
+  - name: flower
+    hostname: flower.localhost
+    port: 5555
+    command: celery
+    args: ["-A", "app.celery_app", "flower", "--port=5555"]
+    working_dir: .
+    environment:
+      REDIS_URL: redis://localhost:6379/0
+    health_check:
+      enabled: true
+      path: /
+      interval: 60s
+
+tls:
+  enabled: false
+  certificate_headers: false
+
+# Usage:
+# 1. Install dependencies: pip install fastapi uvicorn celery redis psycopg2-binary flower
+# 2. Create app/ directory with main.py and celery_app.py
+# 3. Run: guvnor start
+# 4. API: http://api.localhost:8080
+# 5. Flower UI: http://flower.localhost:8080

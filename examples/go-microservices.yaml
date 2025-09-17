@@ -1,0 +1,162 @@
+# Go Microservices Architecture
+# Multi-service Go application with gRPC and HTTP APIs
+
+server:
+  http_port: 8080
+  https_port: 8443
+  log_level: info
+  enable_tracking: true
+  tracking_header: "X-CORRELATION-ID"
+
+apps:
+  # API Gateway (Go + Gin)
+  - name: api-gateway
+    hostname: gateway.localhost
+    port: 8000
+    command: go
+    args: ["run", "cmd/gateway/main.go"]
+    working_dir: .
+    environment:
+      PORT: "8000"
+      USER_SERVICE_URL: "localhost:8001"
+      ORDER_SERVICE_URL: "localhost:8002"
+      PAYMENT_SERVICE_URL: "localhost:8003"
+      LOG_LEVEL: "info"
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # User Service (Go + gRPC)
+  - name: user-service
+    hostname: users.localhost
+    port: 8001
+    command: go
+    args: ["run", "cmd/user-service/main.go"]
+    working_dir: .
+    environment:
+      GRPC_PORT: "8001"
+      HTTP_PORT: "9001"
+      DATABASE_URL: "postgres://postgres:password@localhost:5432/users_db"
+      LOG_LEVEL: "info"
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # Order Service (Go + gRPC)
+  - name: order-service
+    hostname: orders.localhost
+    port: 8002
+    command: go
+    args: ["run", "cmd/order-service/main.go"]
+    working_dir: .
+    environment:
+      GRPC_PORT: "8002"
+      HTTP_PORT: "9002"
+      DATABASE_URL: "postgres://postgres:password@localhost:5432/orders_db"
+      REDIS_URL: "redis://localhost:6379/1"
+      LOG_LEVEL: "info"
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # Payment Service (Go + gRPC)
+  - name: payment-service
+    hostname: payments.localhost
+    port: 8003
+    command: go
+    args: ["run", "cmd/payment-service/main.go"]
+    working_dir: .
+    environment:
+      GRPC_PORT: "8003"
+      HTTP_PORT: "9003"
+      DATABASE_URL: "postgres://postgres:password@localhost:5432/payments_db"
+      STRIPE_SECRET_KEY: "sk_test_..."
+      LOG_LEVEL: "info"
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # PostgreSQL Database
+  - name: postgres
+    port: 5432
+    command: docker
+    args: ["run", "--rm", "-p", "5432:5432",
+           "-e", "POSTGRES_USER=postgres",
+           "-e", "POSTGRES_PASSWORD=password",
+           "-e", "POSTGRES_DB=microservices_db",
+           "-v", "postgres_data:/var/lib/postgresql/data",
+           "postgres:15"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 5432
+      interval: 20s
+
+  # Redis for Caching
+  - name: redis
+    port: 6379
+    command: docker
+    args: ["run", "--rm", "-p", "6379:6379", "redis:7-alpine"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 6379
+      interval: 20s
+
+  # Prometheus for Metrics
+  - name: prometheus
+    hostname: metrics.localhost
+    port: 9090
+    command: docker
+    args: ["run", "--rm", "-p", "9090:9090",
+           "-v", "./prometheus.yml:/etc/prometheus/prometheus.yml",
+           "prom/prometheus"]
+    health_check:
+      enabled: true
+      path: /-/healthy
+      interval: 30s
+
+tls:
+  enabled: false
+  certificate_headers: false
+
+# Project Structure:
+# ├── cmd/
+# │   ├── gateway/main.go
+# │   ├── user-service/main.go
+# │   ├── order-service/main.go
+# │   └── payment-service/main.go
+# ├── internal/
+# │   ├── gateway/
+# │   ├── user/
+# │   ├── order/
+# │   └── payment/
+# ├── proto/
+# │   ├── user.proto
+# │   ├── order.proto
+# │   └── payment.proto
+# ├── prometheus.yml
+# └── guvnor.yaml
+
+# Usage:
+# 1. go mod init your-microservices
+# 2. Create the directory structure above
+# 3. Run: guvnor start
+# 4. Gateway: http://gateway.localhost:8080
+# 5. Metrics: http://metrics.localhost:8080

@@ -1,0 +1,200 @@
+# Docker Compose Alternative with Guvnor
+# Replace docker-compose with Guvnor for better process management and monitoring
+
+server:
+  http_port: 8080
+  https_port: 8443
+  log_level: info
+  enable_tracking: true
+  tracking_header: "X-CONTAINER-TRACE"
+
+apps:
+  # Frontend Container (Nginx serving React/Vue/Angular)
+  - name: frontend
+    hostname: app.localhost
+    port: 3000
+    command: docker
+    args: ["run", "--rm", "-p", "3000:80", 
+           "-v", "./frontend/dist:/usr/share/nginx/html:ro",
+           "nginx:alpine"]
+    health_check:
+      enabled: true
+      path: /
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 3
+
+  # Backend API Container (Node.js/Python/Go)
+  - name: api
+    hostname: api.localhost
+    port: 8000
+    command: docker
+    args: ["run", "--rm", "-p", "8000:8000",
+           "-v", "./backend:/app",
+           "-w", "/app",
+           "-e", "NODE_ENV=development",
+           "-e", "DATABASE_URL=postgres://postgres:password@host.docker.internal:5432/app_db",
+           "-e", "REDIS_URL=redis://host.docker.internal:6379",
+           "node:18-alpine", "npm", "start"]
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # PostgreSQL Database Container
+  - name: postgres
+    port: 5432
+    command: docker
+    args: ["run", "--rm", "-p", "5432:5432",
+           "-e", "POSTGRES_DB=app_db",
+           "-e", "POSTGRES_USER=postgres",
+           "-e", "POSTGRES_PASSWORD=password",
+           "-v", "postgres_data:/var/lib/postgresql/data",
+           "postgres:15-alpine"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 5432
+      interval: 20s
+    restart_policy:
+      enabled: true
+      max_retries: 10
+
+  # Redis Cache Container
+  - name: redis
+    port: 6379
+    command: docker
+    args: ["run", "--rm", "-p", "6379:6379",
+           "-v", "redis_data:/data",
+           "redis:7-alpine", "redis-server", "--appendonly", "yes"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 6379
+      interval: 20s
+    restart_policy:
+      enabled: true
+      max_retries: 10
+
+  # Background Worker Container
+  - name: worker
+    port: 8001
+    command: docker
+    args: ["run", "--rm",
+           "-v", "./backend:/app",
+           "-w", "/app",
+           "-e", "NODE_ENV=development",
+           "-e", "DATABASE_URL=postgres://postgres:password@host.docker.internal:5432/app_db",
+           "-e", "REDIS_URL=redis://host.docker.internal:6379",
+           "node:18-alpine", "npm", "run", "worker"]
+    health_check:
+      enabled: true
+      command: ["docker", "exec", "worker-container", "npm", "run", "health-check"]
+      interval: 60s
+    restart_policy:
+      enabled: true
+      max_retries: 10
+
+  # Monitoring Container (Prometheus)
+  - name: prometheus
+    hostname: metrics.localhost
+    port: 9090
+    command: docker
+    args: ["run", "--rm", "-p", "9090:9090",
+           "-v", "./prometheus.yml:/etc/prometheus/prometheus.yml:ro",
+           "-v", "prometheus_data:/prometheus",
+           "prom/prometheus", 
+           "--config.file=/etc/prometheus/prometheus.yml",
+           "--storage.tsdb.path=/prometheus",
+           "--web.console.libraries=/etc/prometheus/console_libraries",
+           "--web.console.templates=/etc/prometheus/consoles"]
+    health_check:
+      enabled: true
+      path: /-/healthy
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # Log Aggregation Container (Grafana Loki)
+  - name: loki
+    port: 3100
+    command: docker
+    args: ["run", "--rm", "-p", "3100:3100",
+           "-v", "./loki-config.yml:/etc/loki/local-config.yaml:ro",
+           "-v", "loki_data:/loki",
+           "grafana/loki:latest", 
+           "-config.file=/etc/loki/local-config.yaml"]
+    health_check:
+      enabled: true
+      path: /ready
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # Grafana Dashboard Container
+  - name: grafana
+    hostname: dashboard.localhost
+    port: 3001
+    command: docker
+    args: ["run", "--rm", "-p", "3001:3000",
+           "-e", "GF_SECURITY_ADMIN_PASSWORD=admin",
+           "-v", "grafana_data:/var/lib/grafana",
+           "grafana/grafana:latest"]
+    health_check:
+      enabled: true
+      path: /api/health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+tls:
+  enabled: false
+  certificate_headers: false
+
+# Advantages over docker-compose:
+# ✅ Process-level monitoring and health checks
+# ✅ Intelligent restart policies with backoff
+# ✅ Automatic reverse proxy with virtual hosts
+# ✅ Request tracking across all containers
+# ✅ Apache-style access logging
+# ✅ Management API for programmatic control
+# ✅ Certificate management with Let's Encrypt
+# ✅ Real-time log streaming
+# ✅ Process dependency management
+
+# Required Docker volumes (create with: docker volume create <name>):
+# - postgres_data
+# - redis_data
+# - prometheus_data
+# - loki_data
+# - grafana_data
+
+# Required files:
+# - prometheus.yml (Prometheus configuration)
+# - loki-config.yml (Loki configuration)
+# - frontend/dist/ (Built frontend assets)
+# - backend/ (Backend source code)
+
+# Usage:
+# 1. Create required Docker volumes
+# 2. Prepare configuration files
+# 3. Build frontend: npm run build (in frontend/)
+# 4. Run: guvnor start
+# 5. Access services:
+#    - Frontend: http://app.localhost:8080
+#    - API: http://api.localhost:8080
+#    - Metrics: http://metrics.localhost:8080
+#    - Dashboard: http://dashboard.localhost:8080
+
+# Container Management:
+# guvnor status                    # Show all container status
+# guvnor stop postgres             # Stop specific container
+# guvnor restart worker            # Restart background worker
+# guvnor logs frontend             # View container logs

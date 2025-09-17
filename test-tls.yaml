@@ -1,0 +1,28 @@
+# Test TLS configuration for certificate validation
+server:
+  http_port: 8083
+  https_port: 8444
+  log_level: info
+  enable_tracking: true
+
+apps:
+  - name: test-express-app
+    hostname: test.localhost
+    port: 3000
+    command: node
+    args: ["server.js"]
+    tls:
+      enabled: true
+      auto_cert: true
+      certificate_headers: true
+
+tls:
+  enabled: true
+  auto_cert: true
+  email: test@example.com
+  cert_dir: ./test-certs
+  staging: true  # Use staging for testing
+  force_https: false
+  certificate_headers: true
+  domains:
+    - test.localhost

@@ -1,0 +1,85 @@
+# Next.js Full-Stack Application with API
+# Complete setup for a Next.js frontend with separate API backend
+
+server:
+  http_port: 8080
+  https_port: 8443
+  log_level: info
+  enable_tracking: true
+  tracking_header: "X-REQUEST-ID"
+
+apps:
+  # Next.js Frontend
+  - name: nextjs-frontend
+    hostname: app.localhost
+    port: 3000
+    command: npm
+    args: ["run", "dev"]
+    working_dir: ./frontend
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://api.localhost:8080
+      PORT: "3000"
+    health_check:
+      enabled: true
+      path: /api/health
+      interval: 30s
+    restart_policy:
+      enabled: true
+      max_retries: 5
+
+  # Express.js API Backend
+  - name: express-api
+    hostname: api.localhost
+    port: 3001
+    command: npm
+    args: ["run", "dev"]
+    working_dir: ./backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://localhost:5432/myapp
+      JWT_SECRET: dev-secret-key
+      PORT: "3001"
+    health_check:
+      enabled: true
+      path: /health
+      interval: 15s
+    restart_policy:
+      enabled: true
+      max_retries: 10
+
+  # Database (PostgreSQL)
+  - name: postgres
+    port: 5432
+    command: docker
+    args: ["run", "--rm", "-p", "5432:5432", 
+           "-e", "POSTGRES_DB=myapp", 
+           "-e", "POSTGRES_PASSWORD=devpass", 
+           "postgres:15"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 5432
+      interval: 20s
+
+  # Redis Cache
+  - name: redis
+    port: 6379
+    command: docker
+    args: ["run", "--rm", "-p", "6379:6379", "redis:7-alpine"]
+    health_check:
+      enabled: true
+      type: tcp
+      port: 6379
+      interval: 20s
+
+tls:
+  enabled: false
+  certificate_headers: false
+
+# Usage:
+# 1. Place this in your project root
+# 2. Ensure frontend/ and backend/ directories exist
+# 3. Run: guvnor start
+# 4. Visit: http://app.localhost:8080
+# 5. API available at: http://api.localhost:8080
